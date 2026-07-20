@@ -52,3 +52,62 @@ def test_cli_returns_validation_error_for_unsupported_pair(tmp_path, capsys):
 
     assert exit_code == 2
     assert "does not support Exchange" in capsys.readouterr().err
+
+
+def test_cli_accepts_per_horizon_batch_sizes(tmp_path, capsys):
+    exit_code = main(
+        [
+            "--local",
+            "--code-root",
+            str(REPO_ROOT),
+            "--dataset-root",
+            str(REPO_ROOT / "dataset"),
+            "--output-root",
+            str(tmp_path),
+            "--model",
+            "DLinear",
+            "--dataset",
+            "ETTh1",
+            "--pred-len",
+            "96,192",
+            "--batch-size",
+            "192:64,96:128",
+            "--dry-run",
+        ]
+    )
+
+    output = json.loads(capsys.readouterr().out)
+    argv_96 = output["commands"]["96"][0]["argv"]
+    argv_192 = output["commands"]["192"][0]["argv"]
+    assert exit_code == 0
+    assert argv_96[argv_96.index("--batch_size") + 1] == "128"
+    assert argv_192[argv_192.index("--batch_size") + 1] == "64"
+
+
+def test_cli_rejects_incomplete_batch_size_mapping_before_training(
+    tmp_path, capsys
+):
+    exit_code = main(
+        [
+            "--local",
+            "--code-root",
+            str(REPO_ROOT),
+            "--dataset-root",
+            str(REPO_ROOT / "dataset"),
+            "--output-root",
+            str(tmp_path),
+            "--model",
+            "DLinear",
+            "--dataset",
+            "ETTh1",
+            "--pred-len",
+            "96,192",
+            "--batch-size",
+            "96:128",
+            "--dry-run",
+        ]
+    )
+
+    assert exit_code == 2
+    assert "Missing batch size for prediction lengths: 192" in capsys.readouterr().err
+    assert not (tmp_path / "DLinear" / "ETTh1" / "96" / "status.json").exists()

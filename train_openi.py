@@ -10,6 +10,7 @@ from openi_baselines.platform import PlatformContext, prepare_platform
 from openi_baselines.registry import (
     UnsupportedTaskError,
     get_task,
+    parse_batch_sizes,
     parse_pred_lengths,
 )
 from openi_baselines.runner import run_task
@@ -22,6 +23,11 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--model", required=True)
     parser.add_argument("--dataset", required=True)
     parser.add_argument("--pred-len", default=None)
+    parser.add_argument(
+        "--batch-size",
+        default=None,
+        help="Comma-separated PRED_LEN:BATCH_SIZE mapping",
+    )
     parser.add_argument("--force", action="store_true")
     parser.add_argument("--dry-run", action="store_true")
     parser.add_argument("--local", action="store_true")
@@ -43,6 +49,7 @@ def main(argv: list[str] | None = None) -> int:
         )
         task = get_task(args.model, args.dataset)
         pred_lengths = parse_pred_lengths(task, args.pred_len)
+        batch_sizes = parse_batch_sizes(pred_lengths, args.batch_size)
         repo_root = resolve_repo(context.code_path)
         data = resolve_dataset_file(context.dataset_path, task.dataset)
         result = run_task(
@@ -53,6 +60,7 @@ def main(argv: list[str] | None = None) -> int:
             output_root=context.output_path,
             force=args.force,
             dry_run=args.dry_run,
+            batch_sizes=batch_sizes,
         )
         print(json.dumps(result.as_dict(), ensure_ascii=False, indent=2))
         return result.exit_code

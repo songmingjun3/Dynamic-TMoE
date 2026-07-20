@@ -15,9 +15,9 @@ FAKE_TRAIN = Path(__file__).parent / "fixtures" / "fake_train.py"
 def fake_builder(fail=(), calls=None):
     failed = set(fail)
 
-    def build(task, pred_len, layout):
+    def build(task, pred_len, layout, batch_size=None):
         if calls is not None:
-            calls.append(pred_len)
+            calls.append((pred_len, batch_size))
         cwd = layout.task_output / "native_work" / "train"
         cwd.mkdir(parents=True, exist_ok=True)
         argv = [sys.executable, str(FAKE_TRAIN), "--pred-len", str(pred_len)]
@@ -71,7 +71,7 @@ def test_runner_skips_success_unless_force(tmp_path):
     assert first.statuses[96] == "succeeded"
     assert resumed.statuses[96] == "skipped"
     assert forced.statuses[96] == "succeeded"
-    assert calls == [96, 96]
+    assert calls == [(96, None), (96, None)]
 
 
 def test_runner_writes_dataset_level_json_and_csv_summaries(tmp_path):
@@ -93,3 +93,17 @@ def test_dry_run_builds_commands_without_starting_processes(tmp_path):
     assert result.statuses[96] == "planned"
     assert result.commands[96][0]["stage"] == "train"
     assert not (tmp_path / "DLinear" / "ETTh1" / "96" / "status.json").exists()
+
+
+def test_runner_routes_each_horizon_batch_size(tmp_path):
+    calls = []
+
+    run_fake(
+        tmp_path,
+        (96, 192),
+        batch_sizes={96: 128, 192: 64},
+        process_builder=fake_builder(calls=calls),
+        dry_run=True,
+    )
+
+    assert calls == [(96, 128), (192, 64)]
