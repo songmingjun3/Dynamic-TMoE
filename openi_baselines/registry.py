@@ -24,11 +24,15 @@ DATASETS = (
 MODEL_DEFINITIONS = {
     "DLinear": ("baselines/Dlinear/run_longExp.py", "DLinear", DATASETS),
     "FEDformer": ("baselines/FEDformer/run.py", "FEDformer", DATASETS),
-    "FITS": ("baselines/FITS/run_longExp.py", "FITS", DATASETS),
+    "FITS": ("baselines/FITS/run_longExp_F.py", "FITS", DATASETS),
     "PatchTST": ("baselines/PatchTST/run_longExp.py", "PatchTST", DATASETS),
     "RAFT": ("baselines/RAFT/run.py", "RAFT", DATASETS),
     "ST-MTM": ("baselines/st-mtm/run.py", "STMTM", DATASETS),
-    "TFPS": ("baselines/TFPS/run_longExp.py", "TFPS", DATASETS),
+    "TFPS": (
+        "baselines/TFPS/run_longExp.py",
+        "PatchTST_MoE_cluster",
+        DATASETS,
+    ),
     "TimeMixer": (
         "baselines/TimeMixer/run.py",
         "TimeMixer",

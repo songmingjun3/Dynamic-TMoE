@@ -18,3 +18,11 @@ class TaskSpec:
     parameters: Mapping[str, object] = field(default_factory=dict)
     horizon_overrides: Mapping[int, Mapping[str, object]] = field(default_factory=dict)
     stages: tuple[str, ...] = ("train",)
+
+
+@dataclass(frozen=True)
+class ProcessSpec:
+    stage: str
+    argv: tuple[str, ...]
+    cwd: Path
+    env: Mapping[str, str] = field(default_factory=dict)
