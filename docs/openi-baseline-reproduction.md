@@ -24,7 +24,9 @@ python -c "import c2net, torch; print(torch.__version__, torch.cuda.is_available
 
 训练任务运行期间不会自动安装或降级大型机器学习依赖。
 
-## 任务提交粒度
+## 本地启动辅助脚本
+
+以下 Shell 脚本用于本地调试或生成等价参数；启智训练任务必须按下一节选择 `.py` 启动文件。
 
 运行一个模型/数据集的全部标准预测长度：
 
@@ -55,7 +57,24 @@ python -u train_openi.py \
 - 数据集：`TS`；
 - 镜像：已经安装 baseline 依赖和 `c2net` 的构建镜像；
 - 资源：单卡 GPU；
-- 启动命令：上述 `bash scripts/openi/...` 命令之一。
+- 启动文件：`train_openi.py`；
+- 参数：按下方格式填写模型、数据集、预测长度和可选 batch size 映射。
+
+单个预测长度参数：
+
+```text
+--model DLinear --dataset ETTh1 --pred-len 96 --batch-size 96:128
+```
+
+多个预测长度使用逗号分隔，并为每个长度提供对应 batch size：
+
+```text
+--model DLinear --dataset ETTh1 --pred-len 96,192 --batch-size 96:128,192:64
+```
+
+`--batch-size` 使用 `pred_len:batch_size` 映射格式，映射顺序不影响预测长度的执行顺序。传入该参数时，每个选中的预测长度都必须有且仅有一个映射；存在缺失、额外、重复、非整数或非正数时，任务会在启动 baseline 训练前退出。不传 `--batch-size` 时保留每个 baseline 的原始默认配置。
+
+ST-MTM 的某个预测长度设置 batch size 后，该值会同时用于对应的预训练和微调阶段。多个预测长度仍然顺序执行，不会同时占用 GPU 显存。
 
 任务入口调用 `c2net.context.prepare()` 获取实际代码、数据集和输出路径，不需要把 `/tmp/code`、`/tmp/dataset` 或 `/tmp/output` 写死在任务参数中。
 
@@ -88,8 +107,8 @@ python -u train_openi.py \
 
 再次提交相同任务时，已有 `status=succeeded` 的预测长度会跳过。强制重跑使用：
 
-```bash
-bash scripts/openi/DLinear/ETTh1/pred_96.sh --force
+```text
+--model DLinear --dataset ETTh1 --pred-len 96 --force
 ```
 
 生成的 Shell 脚本会把额外参数原样传给统一入口。
@@ -119,8 +138,9 @@ python -m pytest tests/openi_baselines -v
 
 正式提交完整矩阵前，先提交单卡冒烟任务：
 
-```bash
-bash scripts/openi/DLinear/ETTh1/pred_96.sh
+```text
+启动文件：train_openi.py
+参数：--model DLinear --dataset ETTh1 --pred-len 96 --batch-size 96:128
 ```
 
 冒烟任务通过标准：任务输出可下载，且包含 checkpoint、预测文件、含 MSE/MAE 的 `metrics.json` 和状态为 `succeeded` 的 `status.json`。
