@@ -72,9 +72,23 @@ python -u train_openi.py \
 --model DLinear --dataset ETTh1 --pred-len 96,192 --batch-size 96:128,192:64
 ```
 
+多个模型和数据集同样使用逗号分隔，并按模型优先的笛卡尔积顺序执行：
+
+```text
+--model DLinear,PatchTST --dataset ETTh1,Weather --pred-len 96,192 --batch-size 96:128,192:64
+```
+
+上例依次执行 `DLinear×ETTh1`、`DLinear×Weather`、`PatchTST×ETTh1` 和 `PatchTST×Weather`。所有任务在单 GPU 上串行运行；任意组合或显式预测长度不受支持时，整个矩阵会在训练前拒绝，不会静默跳过。
+
 `--batch-size` 使用 `pred_len:batch_size` 映射格式，映射顺序不影响预测长度的执行顺序。传入该参数时，每个选中的预测长度都必须有且仅有一个映射；存在缺失、额外、重复、非整数或非正数时，任务会在启动 baseline 训练前退出。不传 `--batch-size` 时保留每个 baseline 的原始默认配置。
 
 ST-MTM 的某个预测长度设置 batch size 后，该值会同时用于对应的预训练和微调阶段。多个预测长度仍然顺序执行，不会同时占用 GPU 显存。
+
+不传 `--pred-len` 或传入 `all` 时，每个数据集使用自身标准预测长度。矩阵同时包含普通数据集和 ILI 且需要覆盖 batch size 时，映射必须包含实际 horizon 的并集：
+
+```text
+--batch-size 24:64,36:64,48:32,60:32,96:128,192:64,336:32,720:16
+```
 
 任务入口调用 `c2net.context.prepare()` 获取实际代码、数据集和输出路径，不需要把 `/tmp/code`、`/tmp/dataset` 或 `/tmp/output` 写死在任务参数中。
 
@@ -99,11 +113,15 @@ ST-MTM 的某个预测长度设置 batch size 后，该值会同时用于对应�
 
 数据集级目录还包含 `metrics_summary.csv`、`metrics_summary.json` 和 `status_summary.json`。
 
+多任务输出根目录还包含 `multi_task_summary.json` 和 `multi_task_summary.csv`，按模型、数据集和预测长度记录状态及任务退出码。
+
 `metrics.json` 至少包含 MSE 和 MAE；原模型提供的 RMSE、MAPE、MSPE、RSE 和相关系数会一并保留。`command.json` 保存实际 argv、工作目录和阶段信息，`environment.json` 保存 Python、PyTorch、CUDA 和可见 GPU 信息。
 
 ## 失败、续跑和强制重跑
 
 一个预测长度失败后，任务继续运行其余预测长度。已有 checkpoint、日志和其他部分产物仍会上传；整个任务最终以非零退出码结束，失败原因记录在 `status.json` 和 `logs/error.log`。
+
+多任务矩阵中的一个模型/数据集任务失败后，其余任务继续执行；只要有任意任务失败，矩阵最终返回非零退出码，并在根目录汇总中保留各任务状态。
 
 再次提交相同任务时，已有 `status=succeeded` 的预测长度会跳过。强制重跑使用：
 
