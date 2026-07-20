@@ -5,7 +5,7 @@ do
 
 python -u run.py \
  --is_training 1 \
- --root_path ./dataset/exchange_rate/ \
+ --root_path ../../dataset/exchange_rate/ \
  --data_path exchange_rate.csv \
  --task_id Exchange \
  --model FEDformer \

@@ -9,7 +9,7 @@ fi
 seq_len=96
 model_name=PatchTST
 
-root_path_name=./dataset/ETT-small/
+root_path_name=../../dataset/ETT-small/
 data_path_name=ETTh1.csv
 model_id_name=ETTh1
 data_name=ETTh1
@@ -46,7 +46,7 @@ done
 seq_len=96
 model_name=PatchTST
 
-root_path_name=./dataset/ETT-small/
+root_path_name=../../dataset/ETT-small/
 data_path_name=ETTh2.csv
 model_id_name=ETTh2
 data_name=ETTh2
@@ -83,7 +83,7 @@ done
 seq_len=96
 model_name=PatchTST
 
-root_path_name=./dataset/ETT-small/
+root_path_name=../../dataset/ETT-small/
 data_path_name=ETTm1.csv
 model_id_name=ETTm1
 data_name=ETTm1
@@ -123,7 +123,7 @@ done
 seq_len=96
 model_name=PatchTST
 
-root_path_name=./dataset/ETT-small/
+root_path_name=../../dataset/ETT-small/
 data_path_name=ETTm2.csv
 model_id_name=ETTm2
 data_name=ETTm2
@@ -163,7 +163,7 @@ done
 seq_len=96
 model_name=PatchTST
 
-root_path_name=./dataset/electricity/
+root_path_name=../../dataset/electricity/
 data_path_name=electricity.csv
 model_id_name=Electricity
 data_name=custom
@@ -203,7 +203,7 @@ done
 seq_len=96
 model_name=PatchTST
 
-root_path_name=./dataset/traffic/
+root_path_name=../../dataset/traffic/
 data_path_name=traffic.csv
 model_id_name=traffic
 data_name=custom

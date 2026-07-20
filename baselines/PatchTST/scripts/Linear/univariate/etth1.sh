@@ -14,7 +14,7 @@ model_name=DLinear
 # ETTh1, univariate results, pred_len= 24 48 96 192 336 720
 python -u run_longExp.py \
   --is_training 1 \
-  --root_path ./dataset/ \
+  --root_path ../../dataset/ETT-small/ \
   --data_path ETTh1.csv \
   --model_id ETTh1_336_24 \
   --model $model_name \
@@ -27,7 +27,7 @@ python -u run_longExp.py \
  
 python -u run_longExp.py \
   --is_training 1 \
-  --root_path ./dataset/ \
+  --root_path ../../dataset/ETT-small/ \
   --data_path ETTh1.csv \
   --model_id ETTh1_336_48 \
   --model $model_name \
@@ -40,7 +40,7 @@ python -u run_longExp.py \
 
 python -u run_longExp.py \
   --is_training 1 \
-  --root_path ./dataset/ \
+  --root_path ../../dataset/ETT-small/ \
   --data_path ETTh1.csv \
   --model_id ETTh1_336_96 \
   --model $model_name \
@@ -53,7 +53,7 @@ python -u run_longExp.py \
 
 python -u run_longExp.py \
   --is_training 1 \
-  --root_path ./dataset/ \
+  --root_path ../../dataset/ETT-small/ \
   --data_path ETTh1.csv \
   --model_id ETTh1_336_192 \
   --model $model_name \
@@ -66,7 +66,7 @@ python -u run_longExp.py \
 
 python -u run_longExp.py \
   --is_training 1 \
-  --root_path ./dataset/ \
+  --root_path ../../dataset/ETT-small/ \
   --data_path ETTh1.csv \
   --model_id ETTh1_336_336 \
   --model $model_name \
@@ -80,7 +80,7 @@ python -u run_longExp.py \
 
 python -u run_longExp.py \
   --is_training 1 \
-  --root_path ./dataset/ \
+  --root_path ../../dataset/ETT-small/ \
   --data_path ETTh1.csv \
   --model_id ETTh1_336_720 \
   --model $model_name \

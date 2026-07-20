@@ -29,10 +29,10 @@ class DynamicExpertPool(nn.Module):
         self.num_fourier_modes = num_patches // 2
         self.experts = nn.ModuleList()
 
-        self.experts.append(IdentityExpert(d_model=d_model, use_relation_layer=use_relation_layer))
-        self.experts.append(TrendExpert(d_model=d_model, use_relation_layer=use_relation_layer))
-        self.experts.append(SeasonalityExpert(d_model=d_model, num_fourier_modes=self.num_fourier_modes, use_relation_layer=use_relation_layer))
-        self.experts.append(FluctuationExpert(d_model=d_model, use_relation_layer=use_relation_layer))
+        self.experts.append(self._create_expert('identity'))
+        self.experts.append(self._create_expert('trend'))
+        self.experts.append(self._create_expert('seasonality'))
+        self.experts.append(self._create_expert('fluctuation'))
 
         remaining = num_experts - 4
         if remaining > 0:

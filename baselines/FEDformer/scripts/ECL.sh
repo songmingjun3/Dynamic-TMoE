@@ -5,7 +5,7 @@ do
 
 python -u run.py \
  --is_training 1 \
- --root_path ./dataset/electricity/ \
+ --root_path ../../dataset/electricity/ \
  --data_path electricity.csv \
  --task_id ECL \
  --model FEDformer \

@@ -13,7 +13,7 @@ fi
 # seq_len=96
 model_name=PatchTST_MoE_cluster
 
-root_path_name=./dataset/ETT-small/
+root_path_name=../../dataset/ETT-small/
 data_path_name=ETTm2.csv
 model_id_name=ETTm2
 data_name=ETTm2

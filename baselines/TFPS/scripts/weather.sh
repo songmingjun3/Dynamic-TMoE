@@ -12,7 +12,7 @@ fi
 
 model_name=PatchTST_MoE_cluster
 
-root_path_name=./dataset/weather/
+root_path_name=../../dataset/weather/
 data_path_name=weather.csv
 model_id_name=Weather
 data_name=custom

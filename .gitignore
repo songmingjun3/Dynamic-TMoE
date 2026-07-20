@@ -104,6 +104,7 @@ celerybeat.pid
 # Environments
 .env
 .venv
+.conda/
 env/
 venv/
 ENV/
@@ -171,3 +172,7 @@ environment.txt
 !requirements.txt
 !LICENSE.txt
 !README.txt
+
+output/*
+!output/
+!output/reproduction_summary.csv

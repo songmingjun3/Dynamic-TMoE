@@ -11,7 +11,7 @@ model_name=DLinear
 
 python -u run_longExp.py \
   --is_training 1 \
-  --root_path ./dataset/ \
+  --root_path ../../dataset/illness/ \
   --data_path national_illness.csv \
   --model_id national_illness_$seq_len'_'24 \
   --model $model_name \
@@ -26,7 +26,7 @@ python -u run_longExp.py \
 
 python -u run_longExp.py \
   --is_training 1 \
-  --root_path ./dataset/ \
+  --root_path ../../dataset/illness/ \
   --data_path national_illness.csv \
   --model_id national_illness_$seq_len'_'36 \
   --model $model_name \
@@ -41,7 +41,7 @@ python -u run_longExp.py \
 
 python -u run_longExp.py \
   --is_training 1 \
-  --root_path ./dataset/ \
+  --root_path ../../dataset/illness/ \
   --data_path national_illness.csv \
   --model_id national_illness_$seq_len'_'48 \
   --model $model_name \
@@ -56,7 +56,7 @@ python -u run_longExp.py \
 
 python -u run_longExp.py \
   --is_training 1 \
-  --root_path ./dataset/ \
+  --root_path ../../dataset/illness/ \
   --data_path national_illness.csv \
   --model_id national_illness_$seq_len'_'60 \
   --model $model_name \

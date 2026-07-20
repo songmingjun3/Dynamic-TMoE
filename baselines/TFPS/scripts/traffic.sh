@@ -12,7 +12,7 @@ fi
 
 model_name=PatchTST_MoE_cluster
 
-root_path_name=./dataset/traffic/
+root_path_name=../../dataset/traffic/
 data_path_name=traffic.csv
 model_id_name=Traffic
 data_name=custom

@@ -5,7 +5,7 @@ do
 
 python -u run.py \
  --is_training 1 \
- --root_path ./dataset/traffic/ \
+ --root_path ../../dataset/traffic/ \
  --data_path traffic.csv \
  --task_id traffic \
  --model FEDformer \

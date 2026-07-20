@@ -186,11 +186,17 @@ class MMDDriftDetector(nn.Module):
 
         XX_dists = torch.cdist(X, X, p=2) ** 2  # [n, n]
         K_XX = torch.exp(-XX_dists / (2 * bandwidth ** 2))
-        term1 = (K_XX.sum() - K_XX.diag().sum()) / (n * (n - 1))
+        if n > 1:
+            term1 = (K_XX.sum() - K_XX.diag().sum()) / (n * (n - 1))
+        else:
+            term1 = K_XX.mean()
 
         YY_dists = torch.cdist(Y, Y, p=2) ** 2  # [m, m]
         K_YY = torch.exp(-YY_dists / (2 * bandwidth ** 2))
-        term2 = (K_YY.sum() - K_YY.diag().sum()) / (m * (m - 1))
+        if m > 1:
+            term2 = (K_YY.sum() - K_YY.diag().sum()) / (m * (m - 1))
+        else:
+            term2 = K_YY.mean()
 
         XY_dists = torch.cdist(X, Y, p=2) ** 2  # [n, m]
         K_XY = torch.exp(-XY_dists / (2 * bandwidth ** 2))
@@ -249,7 +255,7 @@ class MMDDriftDetector(nn.Module):
         if not self.should_check_drift():
             return None
 
-        sample_size = max(1, int(self.window_size * 0.1))
+        sample_size = min(self.window_size, max(2, int(self.window_size * 0.1)))
         sample_indices = torch.randperm(self.window_size, device=self.reference_window.device)[:sample_size]
 
         ref_sampled = self.reference_window[sample_indices]
@@ -267,12 +273,11 @@ class MMDDriftDetector(nn.Module):
         
         mmd_squared = self._compute_mmd_squared(ref_data, cur_data)
 
+        dynamic_threshold = self._compute_dynamic_threshold()
+        drift_detected = mmd_squared > dynamic_threshold
+
         self.last_mmd_score.fill_(mmd_squared)
         self._add_mmd_to_history(mmd_squared)
-
-        dynamic_threshold = self._compute_dynamic_threshold()
-
-        drift_detected = mmd_squared > dynamic_threshold
         
         if drift_detected:
             self.drift_count += 1
@@ -332,8 +337,9 @@ class DriftPatternProfiler(nn.Module):
             analysis_scores: dict
         """
         diff = target_data - model_output
+        diff = diff.detach().float().cpu()
         batch_size, seq_len, dim = diff.shape
-        diff_flat = diff.detach().permute(0, 2, 1).reshape(-1, seq_len)
+        diff_flat = diff.permute(0, 2, 1).reshape(-1, seq_len)
 
         diff_mean = diff_flat.mean(dim=1, keepdim=True)
         diff_std = diff_flat.std(dim=1, keepdim=True) + 1e-6

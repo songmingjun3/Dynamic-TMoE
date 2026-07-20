@@ -5,7 +5,7 @@ do
 # illness
 python -u run.py \
  --is_training 1 \
- --root_path ./dataset/illness/ \
+ --root_path ../../dataset/illness/ \
  --data_path national_illness.csv \
  --task_id ili \
  --model FEDformer \

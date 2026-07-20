@@ -279,6 +279,13 @@ class Dataset_Custom(Dataset):
 
         self.data_x = data[border1:border2]
         self.data_y = data[border1:border2]
+        train_sample_limit = getattr(self.args, 'train_sample_limit', 0)
+        if self.set_type == 0 and train_sample_limit > 0:
+            sample_count = max(self.seq_len + self.pred_len, train_sample_limit)
+            sample_count = min(sample_count, len(self.data_x))
+            self.data_x = self.data_x[:sample_count]
+            self.data_y = self.data_y[:sample_count]
+            data_stamp = data_stamp[:sample_count]
 
         if self.set_type == 0 and self.args.augmentation_ratio > 0:
             self.data_x, self.data_y, augmentation_tags = run_augmentation_single(self.data_x, self.data_y, self.args)

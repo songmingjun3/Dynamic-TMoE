@@ -8,7 +8,7 @@ fi
 seq_len=96
 model_name=PatchTST
 
-root_path_name=./dataset/weather/
+root_path_name=../../dataset/weather/
 data_path_name=weather.csv
 model_id_name=weather
 data_name=custom

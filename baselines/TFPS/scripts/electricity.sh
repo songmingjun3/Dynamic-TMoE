@@ -12,7 +12,7 @@ fi
 
 model_name=PatchTST_MoE_cluster
 
-root_path_name=./dataset/electricity/
+root_path_name=../../dataset/electricity/
 data_path_name=electricity.csv
 model_id_name=Electricity
 data_name=custom

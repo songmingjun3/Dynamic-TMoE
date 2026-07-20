@@ -13,7 +13,7 @@ fi
 seq_len=336
 model_name=PatchTST
 
-root_path_name=./dataset/
+root_path_name=../../dataset/ETT-small/
 data_path_name=ETTh2.csv
 model_id_name=ETTh2
 data_name=ETTh2

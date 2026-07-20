@@ -11,7 +11,7 @@ model_name=DLinear
 
 python -u run_longExp.py \
   --is_training 1 \
-  --root_path ./dataset/ \
+  --root_path ../../dataset/ETT-small/ \
   --data_path ETTm1.csv \
   --model_id ETTm1_$seq_len'_'96 \
   --model $model_name \
@@ -25,7 +25,7 @@ python -u run_longExp.py \
 
 python -u run_longExp.py \
   --is_training 1 \
-  --root_path ./dataset/ \
+  --root_path ../../dataset/ETT-small/ \
   --data_path ETTm1.csv \
   --model_id ETTm1_$seq_len'_'192 \
   --model $model_name \
@@ -39,7 +39,7 @@ python -u run_longExp.py \
 
 python -u run_longExp.py \
   --is_training 1 \
-  --root_path ./dataset/ \
+  --root_path ../../dataset/ETT-small/ \
   --data_path ETTm1.csv \
   --model_id ETTm1_$seq_len'_'336 \
   --model $model_name \
@@ -53,7 +53,7 @@ python -u run_longExp.py \
 
 python -u run_longExp.py \
   --is_training 1 \
-  --root_path ./dataset/ \
+  --root_path ../../dataset/ETT-small/ \
   --data_path ETTm1.csv \
   --model_id ETTm1_$seq_len'_'720 \
   --model $model_name \

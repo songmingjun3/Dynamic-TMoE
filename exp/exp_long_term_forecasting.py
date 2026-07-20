@@ -113,13 +113,14 @@ class Exp_Long_Term_Forecast(Exp_Basic):
         for epoch in range(self.args.train_epochs):
             iter_count = 0
             train_loss = []
+            accumulation_steps = max(1, self.args.gradient_accumulation_steps)
 
             self.model.train()
             epoch_time = time.time()
+            model_optim.zero_grad()
             
             for i, (batch_x, batch_y, batch_x_mark, batch_y_mark) in enumerate(train_loader):
                 iter_count += 1
-                model_optim.zero_grad()
                 batch_x = batch_x.float().to(self.device)
                 batch_y = batch_y.float().to(self.device)
                 batch_x_mark = batch_x_mark.float().to(self.device)
@@ -167,12 +168,16 @@ class Exp_Long_Term_Forecast(Exp_Basic):
                     time_now = time.time()
 
                 if self.args.use_amp:
-                    scaler.scale(loss).backward()
-                    scaler.step(model_optim)
-                    scaler.update()
+                    scaler.scale(loss / accumulation_steps).backward()
+                    if (i + 1) % accumulation_steps == 0 or (i + 1) == train_steps:
+                        scaler.step(model_optim)
+                        scaler.update()
+                        model_optim.zero_grad()
                 else:
-                    loss.backward()
-                    model_optim.step()
+                    (loss / accumulation_steps).backward()
+                    if (i + 1) % accumulation_steps == 0 or (i + 1) == train_steps:
+                        model_optim.step()
+                        model_optim.zero_grad()
 
             print("Epoch: {} cost time: {}".format(epoch + 1, time.time() - epoch_time))
             train_loss = np.average(train_loss)
@@ -204,8 +209,17 @@ class Exp_Long_Term_Forecast(Exp_Basic):
                 strict=False
             )
 
+        estimated_elements = len(test_data) * self.args.pred_len * self.args.c_out
+        store_full_outputs = estimated_elements <= 80_000_000
         preds = []
         trues = []
+        metric_sums = {
+            'abs': 0.0,
+            'sq': 0.0,
+            'ape': 0.0,
+            'spe': 0.0,
+            'count': 0,
+        }
         folder_path = './test_results/' + setting + '/'
         if not os.path.exists(folder_path):
             os.makedirs(folder_path)
@@ -263,8 +277,18 @@ class Exp_Long_Term_Forecast(Exp_Basic):
                 pred = outputs
                 true = batch_y
 
-                preds.append(pred)
-                trues.append(true)
+                diff = true - pred
+                metric_sums['abs'] += np.abs(diff).sum(dtype=np.float64)
+                metric_sums['sq'] += np.square(diff, dtype=np.float64).sum(dtype=np.float64)
+                with np.errstate(divide='ignore', invalid='ignore'):
+                    ratio = diff / true
+                metric_sums['ape'] += np.abs(ratio).sum(dtype=np.float64)
+                metric_sums['spe'] += np.square(ratio, dtype=np.float64).sum(dtype=np.float64)
+                metric_sums['count'] += diff.size
+
+                if store_full_outputs:
+                    preds.append(pred)
+                    trues.append(true)
                 if i % 5 == 0:
                     input = batch_x.detach().cpu().numpy()
                     if test_data.scale and self.args.inverse:
@@ -274,12 +298,18 @@ class Exp_Long_Term_Forecast(Exp_Basic):
                     pd = np.concatenate((input[0, :, -1], pred[0, :, -1]), axis=0)
                     visual(gt, pd, os.path.join(folder_path, str(i) + '.pdf'))
 
-        preds = np.concatenate(preds, axis=0)
-        trues = np.concatenate(trues, axis=0)
-        print('test shape:', preds.shape, trues.shape)
-        preds = preds.reshape(-1, preds.shape[-2], preds.shape[-1])
-        trues = trues.reshape(-1, trues.shape[-2], trues.shape[-1])
-        print('test shape:', preds.shape, trues.shape)
+        if store_full_outputs:
+            preds = np.concatenate(preds, axis=0)
+            trues = np.concatenate(trues, axis=0)
+            print('test shape:', preds.shape, trues.shape)
+            preds = preds.reshape(-1, preds.shape[-2], preds.shape[-1])
+            trues = trues.reshape(-1, trues.shape[-2], trues.shape[-1])
+            print('test shape:', preds.shape, trues.shape)
+        else:
+            preds = None
+            trues = None
+            print('test shape:', (len(test_data), self.args.pred_len, self.args.c_out),
+                  (len(test_data), self.args.pred_len, self.args.c_out))
 
         # result save
         folder_path = './results/' + setting + '/'
@@ -287,7 +317,7 @@ class Exp_Long_Term_Forecast(Exp_Basic):
             os.makedirs(folder_path)
 
         # dtw calculation
-        if self.args.use_dtw:
+        if self.args.use_dtw and store_full_outputs:
             dtw_list = []
             manhattan_distance = lambda x, y: np.abs(x - y)
             for i in range(preds.shape[0]):
@@ -301,7 +331,15 @@ class Exp_Long_Term_Forecast(Exp_Basic):
         else:
             dtw = 'Not calculated'
 
-        mae, mse, rmse, mape, mspe = metric(preds, trues)
+        if store_full_outputs:
+            mae, mse, rmse, mape, mspe = metric(preds, trues)
+        else:
+            count = metric_sums['count']
+            mae = metric_sums['abs'] / count
+            mse = metric_sums['sq'] / count
+            rmse = np.sqrt(mse)
+            mape = metric_sums['ape'] / count
+            mspe = metric_sums['spe'] / count
         print('mse:{}, mae:{}, dtw:{}'.format(mse, mae, dtw))
         f = open("result_long_term_forecast.txt", 'a')
         f.write(setting + "  \n")
@@ -311,7 +349,8 @@ class Exp_Long_Term_Forecast(Exp_Basic):
         f.close()
 
         np.save(folder_path + 'metrics.npy', np.array([mae, mse, rmse, mape, mspe]))
-        np.save(folder_path + 'pred.npy', preds)
-        np.save(folder_path + 'true.npy', trues)
+        if store_full_outputs:
+            np.save(folder_path + 'pred.npy', preds)
+            np.save(folder_path + 'true.npy', trues)
 
         return

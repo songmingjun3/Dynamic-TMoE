@@ -8,7 +8,7 @@ fi
 seq_len=96
 model_name=PatchTST
 
-root_path_name=./dataset/exchange_rate/
+root_path_name=../../dataset/exchange_rate/
 data_path_name=exchange_rate.csv
 model_id_name=exchange_rate
 data_name=custom

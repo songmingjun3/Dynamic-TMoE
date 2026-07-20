@@ -37,7 +37,7 @@ class Model(nn.Module):
         self.drift_history_size = getattr(configs, 'drift_history_size', 20)
         self.drift_k_sigma = getattr(configs, 'drift_k_sigma', 2.0)
 
-        self.train_epochs = getattr(configs, 'train_epochs', 10)
+        self.finetune_epochs = getattr(configs, 'finetune_epochs', 5)
         self.learning_rate = getattr(configs, 'learning_rate', 0.0001)
         self.finetune_patience = getattr(configs, 'finetune_patience', 5)
 
@@ -155,7 +155,7 @@ class Model(nn.Module):
     def check_and_handle_drift(self, train_mode=True):
         for moe_layer in self.temporal_moe_layers:
             moe_layer.check_and_handle_drift(
-                finetune_epochs=self.train_epochs,
+                finetune_epochs=self.finetune_epochs,
                 finetune_lr=self.learning_rate,
                 finetune_patience=self.finetune_patience,
                 train_mode=train_mode

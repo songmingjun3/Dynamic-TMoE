@@ -8,7 +8,7 @@ fi
 seq_len=96
 model_name=PatchTST
 
-root_path_name=./dataset/traffic/
+root_path_name=../../dataset/traffic/
 data_path_name=traffic.csv
 model_id_name=traffic
 data_name=custom

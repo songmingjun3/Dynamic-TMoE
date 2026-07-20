@@ -12,7 +12,7 @@ fi
 
 model_name=PatchTST_MoE_cluster
 
-root_path_name=./dataset/illness/
+root_path_name=../../dataset/illness/
 data_path_name=national_illness.csv
 model_id_name=ILI
 data_name=custom

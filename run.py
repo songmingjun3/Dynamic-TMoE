@@ -28,6 +28,8 @@ if __name__ == '__main__':
     parser.add_argument('--data', type=str, required=True, default='ETTh1', help='dataset type')
     parser.add_argument('--root_path', type=str, default='./data/ETT/', help='root path of the data file')
     parser.add_argument('--data_path', type=str, default='ETTh1.csv', help='data file')
+    parser.add_argument('--train_sample_limit', type=int, default=0,
+                        help='optional cap for custom train split length; 0 uses the full split')
     parser.add_argument('--features', type=str, default='M',
                         help='forecasting task, options:[M, S, MS]; M:multivariate predict multivariate, S:univariate predict univariate, MS:multivariate predict univariate')
     parser.add_argument('--target', type=str, default='OT', help='target feature in S or MS task')
@@ -91,6 +93,8 @@ if __name__ == '__main__':
     parser.add_argument('--itr', type=int, default=1, help='experiments times')
     parser.add_argument('--train_epochs', type=int, default=10, help='train epochs')
     parser.add_argument('--batch_size', type=int, default=32, help='batch size of train input data')
+    parser.add_argument('--gradient_accumulation_steps', type=int, default=1,
+                        help='number of micro-batches to accumulate before optimizer step')
     parser.add_argument('--patience', type=int, default=3, help='early stopping patience')
     parser.add_argument('--learning_rate', type=float, default=0.0001, help='optimizer learning rate')
     parser.add_argument('--des', type=str, default='test', help='exp description')
@@ -156,6 +160,8 @@ if __name__ == '__main__':
                         help='k value in k-Sigma rule for dynamic threshold (threshold = mean + k * std)')
     parser.add_argument('--drift_pool_strategy', type=str, default='persistent',
                         help='Drift expert pool management strategy: "dynamic" (enable/disable based on drift detection) or "persistent" (always keep enabled)')
+    parser.add_argument('--finetune_epochs', type=int, default=5,
+                        help='epochs used when finetuning a newly enabled drift expert')
 
     parser.add_argument('--num_temporal_moe_layers', type=int, default=2, help='number of Temporal MoE layers')
     parser.add_argument('--num_rnn_layers', type=int, default=1, help='number of rnn layers')

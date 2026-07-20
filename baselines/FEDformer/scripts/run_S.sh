@@ -11,7 +11,7 @@ do
 # ETT m1
 python -u run.py \
   --is_training 1 \
-  --root_path ./dataset/ETT-small/ \
+  --root_path ../../dataset/ETT-small/ \
   --data_path ETTm1.csv \
   --task_id ETTm1 \
   --model $model \
@@ -33,7 +33,7 @@ python -u run.py \
 # ETTh1
 python -u run.py \
   --is_training 1 \
-  --root_path ./dataset/ETT-small/ \
+  --root_path ../../dataset/ETT-small/ \
   --data_path ETTh1.csv \
   --task_id ETTh1 \
   --model $model \
@@ -55,7 +55,7 @@ python -u run.py \
 # ETTm2
 python -u run.py \
   --is_training 1 \
-  --root_path ./dataset/ETT-small/ \
+  --root_path ../../dataset/ETT-small/ \
   --data_path ETTm2.csv \
   --task_id ETTm2 \
   --model $model \
@@ -77,7 +77,7 @@ python -u run.py \
 # ETTh2
 python -u run.py \
   --is_training 1 \
-  --root_path ./dataset/ETT-small/ \
+  --root_path ../../dataset/ETT-small/ \
   --data_path ETTh2.csv \
   --task_id ETTh2 \
   --model $model \
@@ -99,7 +99,7 @@ python -u run.py \
 ## electricity
 python -u run.py \
  --is_training 1 \
- --root_path ./dataset/electricity/ \
+ --root_path ../../dataset/electricity/ \
  --data_path electricity.csv \
  --task_id ECL \
  --model $model \
@@ -120,7 +120,7 @@ python -u run.py \
 # exchange
 python -u run.py \
  --is_training 1 \
- --root_path ./dataset/exchange_rate/ \
+ --root_path ../../dataset/exchange_rate/ \
  --data_path exchange_rate.csv \
  --task_id Exchange \
  --model $model \
@@ -141,7 +141,7 @@ python -u run.py \
 # traffic
 python -u run.py \
  --is_training 1 \
- --root_path ./dataset/traffic/ \
+ --root_path ../../dataset/traffic/ \
  --data_path traffic.csv \
  --task_id traffic \
  --model $model \
@@ -163,7 +163,7 @@ python -u run.py \
 # weather
 python -u run.py \
  --is_training 1 \
- --root_path ./dataset/weather/ \
+ --root_path ../../dataset/weather/ \
  --data_path weather.csv \
  --task_id weather \
  --model $model \
@@ -188,7 +188,7 @@ do
 # illness
 python -u run.py \
  --is_training 1 \
- --root_path ./dataset/illness/ \
+ --root_path ../../dataset/illness/ \
  --data_path national_illness.csv \
  --task_id ili \
  --model $model \

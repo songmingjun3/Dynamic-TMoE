@@ -8,7 +8,7 @@ fi
 seq_len=36
 model_name=PatchTST
 
-root_path_name=./dataset/illness/
+root_path_name=../../dataset/illness/
 data_path_name=national_illness.csv
 model_id_name=national_illness
 data_name=custom

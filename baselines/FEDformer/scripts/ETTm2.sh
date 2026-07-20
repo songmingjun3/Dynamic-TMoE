@@ -5,7 +5,7 @@ do
 
 python -u run.py \
   --is_training 1 \
-  --root_path ./dataset/ETT-small/ \
+  --root_path ../../dataset/ETT-small/ \
   --data_path ETTm2.csv \
   --task_id ETTm2 \
   --model FEDformer \

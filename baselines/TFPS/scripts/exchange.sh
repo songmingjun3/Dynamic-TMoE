@@ -12,7 +12,7 @@ fi
 
 model_name=PatchTST_MoE_cluster
 
-root_path_name=./dataset/exchange_rate/
+root_path_name=../../dataset/exchange_rate/
 data_path_name=exchange_rate.csv
 model_id_name=Exchange
 data_name=custom

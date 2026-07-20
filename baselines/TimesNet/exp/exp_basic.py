@@ -1,7 +1,6 @@
-import os
+﻿import os
 import torch
 from models import TimesNet
-from models import macbook
 
 
 class Exp_Basic(object):
