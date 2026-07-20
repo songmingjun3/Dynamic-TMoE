@@ -58,6 +58,9 @@ dataset/
 
 ### Running Experiments
 
+For OpenI training tasks, including model/dataset launchers and fine-grained
+`pred_len` selection, see [OpenI baseline reproduction](docs/openi-baseline-reproduction.md).
+
 Run the following scripts for different long-term forecasting benchmarks:
 
 ```bash
