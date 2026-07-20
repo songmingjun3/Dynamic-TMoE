@@ -35,7 +35,9 @@ def test_dlinear_command_uses_mounted_data_gpu_zero_and_requested_horizon(tmp_pa
     assert option(process.argv, "--data_path") == "ETTh1.csv"
     assert option(process.argv, "--pred_len") == "336"
     assert option(process.argv, "--gpu") == "0"
-    assert option(process.argv, "--checkpoints").startswith(str(layout.task_output))
+    # These baseline implementations save via args.checkpoints but reload from
+    # a hard-coded ./checkpoints path during evaluation. Keep both paths aligned.
+    assert option(process.argv, "--checkpoints") == "./checkpoints"
 
 
 @pytest.mark.parametrize(

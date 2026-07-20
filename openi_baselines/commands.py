@@ -91,7 +91,7 @@ def _dlinear(task: TaskSpec, pred_len: int, layout: CommandLayout) -> ProcessSpe
         batch_size=batches.get(task.dataset, 32),
         learning_rate=rates.get(task.dataset),
         gpu=0,
-        checkpoints=layout.task_output / "checkpoints",
+        checkpoints="./checkpoints",
     )
     return _base_process(task, layout, stage="train", argv=argv)
 
@@ -122,7 +122,7 @@ def _fedformer(task: TaskSpec, pred_len: int, layout: CommandLayout) -> ProcessS
         learning_rate=0.000002 if task.dataset == "ETTm1" else None,
         train_epochs=3 if task.dataset == "Traffic" else None,
         gpu=0,
-        checkpoints=layout.task_output / "checkpoints",
+        checkpoints="./checkpoints",
     )
     return _base_process(task, layout, stage="train", argv=argv)
 
@@ -162,7 +162,7 @@ def _fits(task: TaskSpec, pred_len: int, layout: CommandLayout) -> ProcessSpec:
         batch_size=batches.get(task.dataset, 64),
         learning_rate=0.0005,
         gpu=0,
-        checkpoints=layout.task_output / "checkpoints",
+        checkpoints="./checkpoints",
     )
     return _base_process(task, layout, stage="train", argv=argv)
 
@@ -212,7 +212,7 @@ def _patchtst(task: TaskSpec, pred_len: int, layout: CommandLayout) -> ProcessSp
         batch_size=batch,
         learning_rate=rate,
         gpu=0,
-        checkpoints=layout.task_output / "checkpoints",
+        checkpoints="./checkpoints",
     )
     return _base_process(task, layout, stage="train", argv=argv)
 
@@ -236,7 +236,7 @@ def _raft(task: TaskSpec, pred_len: int, layout: CommandLayout) -> ProcessSpec:
         dec_in=profile["channels"],
         c_out=profile["channels"],
         gpu=0,
-        checkpoints=layout.task_output / "checkpoints",
+        checkpoints="./checkpoints",
     )
     return _base_process(task, layout, stage="train", argv=argv)
 
@@ -335,7 +335,7 @@ def _tfps(task: TaskSpec, pred_len: int, layout: CommandLayout) -> ProcessSpec:
         batch_size=128,
         learning_rate=learning_rate,
         gpu=0,
-        checkpoints=layout.task_output / "checkpoints",
+        checkpoints="./checkpoints",
     )
     return _base_process(task, layout, stage="train", argv=argv)
 
@@ -370,7 +370,7 @@ def _timemixer(task: TaskSpec, pred_len: int, layout: CommandLayout) -> ProcessS
         down_sampling_method="avg",
         down_sampling_window=2,
         gpu=0,
-        checkpoints=layout.task_output / "checkpoints",
+        checkpoints="./checkpoints",
     )
     return _base_process(task, layout, stage="train", argv=argv)
 
@@ -416,7 +416,7 @@ def _timesnet(task: TaskSpec, pred_len: int, layout: CommandLayout) -> ProcessSp
         des="Exp",
         itr=1,
         gpu=0,
-        checkpoints=layout.task_output / "checkpoints",
+        checkpoints="./checkpoints",
     )
     return _base_process(task, layout, stage="train", argv=argv)
 
