@@ -5,7 +5,10 @@ from openi_baselines.registry import (
     get_task,
     iter_tasks,
     parse_batch_sizes,
+    parse_datasets,
+    parse_models,
     parse_pred_lengths,
+    parse_task_matrix,
 )
 
 
@@ -87,3 +90,44 @@ def test_batch_size_mapping_matches_selected_horizons():
 def test_batch_size_mapping_rejects_invalid_values(value, message):
     with pytest.raises(ValueError, match=message):
         parse_batch_sizes((96, 192), value)
+
+
+def test_model_and_dataset_lists_are_canonical_deduplicated_and_ordered():
+    assert parse_models("patchtst,DLinear,patchtst") == (
+        "PatchTST",
+        "DLinear",
+    )
+    assert parse_datasets("weather,ecl,Weather") == (
+        "Weather",
+        "Electricity",
+    )
+
+
+def test_task_matrix_uses_model_major_cartesian_order():
+    tasks = parse_task_matrix("DLinear,PatchTST", "ETTh1,Weather")
+
+    assert [(task.model, task.dataset) for task in tasks] == [
+        ("DLinear", "ETTh1"),
+        ("DLinear", "Weather"),
+        ("PatchTST", "ETTh1"),
+        ("PatchTST", "Weather"),
+    ]
+
+
+def test_task_matrix_rejects_any_unsupported_pair():
+    with pytest.raises(UnsupportedTaskError, match="TimeMixer.*ILI"):
+        parse_task_matrix("DLinear,TimeMixer", "ETTh1,ILI")
+
+
+@pytest.mark.parametrize(
+    ("parser", "value", "label"),
+    [
+        (parse_models, "DLinear,,PatchTST", "model"),
+        (parse_datasets, "ETTh1,,Weather", "dataset"),
+    ],
+)
+def test_name_lists_reject_empty_items(parser, value, label):
+    with pytest.raises(
+        ValueError, match=f"{label} values must be comma-separated"
+    ):
+        parser(value)

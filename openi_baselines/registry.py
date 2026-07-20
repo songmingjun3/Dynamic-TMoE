@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from collections.abc import Iterable
+from collections.abc import Callable, Iterable
 from pathlib import Path
 
 from .types import TaskSpec
@@ -132,6 +132,49 @@ def get_task(model: str, dataset: str) -> TaskSpec:
             f"{canonical_model} does not support {canonical_dataset}. "
             f"Supported datasets: {supported}"
         ) from exc
+
+
+def _parse_canonical_list(
+    value: str,
+    *,
+    label: str,
+    canonicalize: Callable[[str], str],
+) -> tuple[str, ...]:
+    selected: list[str] = []
+    for raw_item in value.split(","):
+        item = raw_item.strip()
+        if not item:
+            raise ValueError(
+                f"{label} values must be comma-separated names"
+            )
+        canonical = canonicalize(item)
+        if canonical not in selected:
+            selected.append(canonical)
+    return tuple(selected)
+
+
+def parse_models(value: str) -> tuple[str, ...]:
+    return _parse_canonical_list(
+        value, label="model", canonicalize=_canonical_model
+    )
+
+
+def parse_datasets(value: str) -> tuple[str, ...]:
+    return _parse_canonical_list(
+        value, label="dataset", canonicalize=_canonical_dataset
+    )
+
+
+def parse_task_matrix(
+    model_value: str, dataset_value: str
+) -> tuple[TaskSpec, ...]:
+    models = parse_models(model_value)
+    datasets = parse_datasets(dataset_value)
+    return tuple(
+        get_task(model, dataset)
+        for model in models
+        for dataset in datasets
+    )
 
 
 def parse_pred_lengths(task: TaskSpec, value: str | None) -> tuple[int, ...]:
