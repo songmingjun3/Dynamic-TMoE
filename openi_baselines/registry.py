@@ -156,3 +156,57 @@ def parse_pred_lengths(task: TaskSpec, value: str | None) -> tuple[int, ...]:
         if pred_len not in selected:
             selected.append(pred_len)
     return tuple(selected)
+
+
+def parse_batch_sizes(
+    pred_lengths: tuple[int, ...], value: str | None
+) -> dict[int, int]:
+    if value is None:
+        return {}
+
+    parsed: dict[int, int] = {}
+    for raw_item in value.split(","):
+        item = raw_item.strip()
+        if item.count(":") != 1:
+            raise ValueError(
+                f"Invalid batch size mapping {item!r}. "
+                "Expected PRED_LEN:BATCH_SIZE"
+            )
+
+        raw_pred_len, raw_batch_size = (
+            part.strip() for part in item.split(":")
+        )
+        try:
+            pred_len = int(raw_pred_len)
+        except ValueError as exc:
+            raise ValueError(
+                f"Invalid prediction length {raw_pred_len!r} "
+                "in batch size mapping"
+            ) from exc
+        if pred_len in parsed:
+            raise ValueError(
+                f"Duplicate batch size mapping for prediction length {pred_len}"
+            )
+
+        try:
+            batch_size = int(raw_batch_size)
+        except ValueError as exc:
+            raise ValueError(f"Invalid batch size {raw_batch_size!r}") from exc
+        if batch_size <= 0:
+            raise ValueError("Batch size must be a positive integer")
+        parsed[pred_len] = batch_size
+
+    selected = set(pred_lengths)
+    provided = set(parsed)
+    missing = selected - provided
+    extra = provided - selected
+    if missing:
+        values = ", ".join(str(item) for item in sorted(missing))
+        raise ValueError(f"Missing batch size for prediction lengths: {values}")
+    if extra:
+        values = ", ".join(str(item) for item in sorted(extra))
+        raise ValueError(
+            "Batch sizes provided for unselected prediction lengths: "
+            f"{values}"
+        )
+    return parsed
