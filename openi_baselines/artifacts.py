@@ -31,11 +31,15 @@ def _category(path: Path) -> str | None:
 def collect_artifacts(source_root: str | Path, destination_root: str | Path) -> dict[str, int]:
     source = Path(source_root).resolve()
     destination = Path(destination_root).resolve()
+    destination_is_inside_source = destination == source or source in destination.parents
     counts = {"checkpoints": 0, "predictions": 0, "native_results": 0}
 
     for path in sorted(source.rglob("*")):
         resolved = path.resolve()
-        if not path.is_file() or resolved == destination or destination in resolved.parents:
+        if not path.is_file() or (
+            destination_is_inside_source
+            and (resolved == destination or destination in resolved.parents)
+        ):
             continue
         category = _category(path)
         if category is None:
