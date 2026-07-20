@@ -94,3 +94,27 @@ def test_all_registered_commands_reference_existing_entrypoints(tmp_path):
             for process in build_processes(task, pred_len, layout):
                 assert Path(process.argv[2]).is_file(), process.argv[2]
                 assert process.cwd.is_relative_to(layout.task_output)
+
+
+@pytest.mark.parametrize("model", ["DLinear", "FEDformer", "TimesNet"])
+def test_batch_size_override_replaces_or_adds_native_option(tmp_path, model):
+    layout = make_layout(tmp_path, "ETTh1")
+
+    process = build_processes(
+        get_task(model, "ETTh1"), 96, layout, batch_size=48
+    )[0]
+
+    assert option(process.argv, "--batch_size") == "48"
+    assert process.argv.count("--batch_size") == 1
+
+
+def test_stmtm_batch_size_override_applies_to_both_stages(tmp_path):
+    layout = make_layout(tmp_path, "ETTh1")
+
+    processes = build_processes(
+        get_task("ST-MTM", "ETTh1"), 96, layout, batch_size=24
+    )
+
+    assert [
+        option(process.argv, "--batch_size") for process in processes
+    ] == ["24", "24"]

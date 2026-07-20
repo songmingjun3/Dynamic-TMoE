@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import sys
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from pathlib import Path
 
 from .paths import DatasetLocation
@@ -434,12 +434,31 @@ BUILDERS = {
 }
 
 
+def _with_batch_size(process: ProcessSpec, batch_size: int) -> ProcessSpec:
+    argv = list(process.argv)
+    option = "--batch_size"
+    if option in argv:
+        argv[argv.index(option) + 1] = str(batch_size)
+    else:
+        argv.extend((option, str(batch_size)))
+    return replace(process, argv=tuple(argv))
+
+
 def build_processes(
-    task: TaskSpec, pred_len: int, layout: CommandLayout
+    task: TaskSpec,
+    pred_len: int,
+    layout: CommandLayout,
+    batch_size: int | None = None,
 ) -> tuple[ProcessSpec, ...]:
     if pred_len not in task.horizons:
         raise ValueError(f"Unsupported prediction length {pred_len} for {task.model}/{task.dataset}")
     result = BUILDERS[task.model](task, pred_len, layout)
     if isinstance(result, ProcessSpec):
-        return (result,)
-    return result
+        processes = (result,)
+    else:
+        processes = result
+    if batch_size is not None:
+        processes = tuple(
+            _with_batch_size(process, batch_size) for process in processes
+        )
+    return processes
