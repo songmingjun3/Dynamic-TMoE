@@ -118,3 +118,27 @@ def test_stmtm_batch_size_override_applies_to_both_stages(tmp_path):
     assert [
         option(process.argv, "--batch_size") for process in processes
     ] == ["24", "24"]
+
+
+@pytest.mark.parametrize("model", ["DLinear", "FEDformer", "TimesNet"])
+def test_num_workers_override_applies_to_standard_models(tmp_path, model):
+    layout = make_layout(tmp_path, "ETTh1")
+
+    process = build_processes(
+        get_task(model, "ETTh1"), 96, layout, num_workers=4
+    )[0]
+
+    assert option(process.argv, "--num_workers") == "4"
+    assert process.argv.count("--num_workers") == 1
+
+
+def test_stmtm_num_workers_override_applies_to_both_stages(tmp_path):
+    layout = make_layout(tmp_path, "ETTh1")
+
+    processes = build_processes(
+        get_task("ST-MTM", "ETTh1"), 96, layout, num_workers=2
+    )
+
+    assert [
+        option(process.argv, "--num_workers") for process in processes
+    ] == ["2", "2"]

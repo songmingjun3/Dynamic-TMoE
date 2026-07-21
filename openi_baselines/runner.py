@@ -19,7 +19,8 @@ from .types import ProcessSpec, TaskSpec
 
 
 ProcessBuilder = Callable[
-    [TaskSpec, int, CommandLayout, int | None], tuple[ProcessSpec, ...]
+    [TaskSpec, int, CommandLayout, int | None, int | None],
+    tuple[ProcessSpec, ...],
 ]
 
 
@@ -171,6 +172,7 @@ def run_task(
     force: bool = False,
     dry_run: bool = False,
     batch_sizes: dict[int, int] | None = None,
+    num_workers: int | None = None,
     process_builder: ProcessBuilder = build_processes,
 ) -> RunResult:
     dataset_output = Path(output_root) / task.model / task.dataset
@@ -191,7 +193,11 @@ def run_task(
             task_output=task_output,
         )
         processes = process_builder(
-            task, pred_len, layout, batch_sizes.get(pred_len)
+            task,
+            pred_len,
+            layout,
+            batch_sizes.get(pred_len),
+            num_workers,
         )
         commands[pred_len] = [_command_payload(process) for process in processes]
 

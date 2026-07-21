@@ -30,6 +30,12 @@ def build_parser() -> argparse.ArgumentParser:
         default=None,
         help="Comma-separated PRED_LEN:BATCH_SIZE mapping",
     )
+    parser.add_argument(
+        "--num-workers",
+        type=int,
+        default=None,
+        help="Override the DataLoader worker count for every selected baseline",
+    )
     parser.add_argument("--force", action="store_true")
     parser.add_argument("--dry-run", action="store_true")
     parser.add_argument("--local", action="store_true")
@@ -49,6 +55,8 @@ def main(argv: list[str] | None = None) -> int:
             pred_len_value=args.pred_len,
             batch_size_value=args.batch_size,
         )
+        if args.num_workers is not None and args.num_workers <= 0:
+            raise ValueError("num-workers must be a positive integer")
         context = prepare_platform(
             local=args.local,
             code_root=args.code_root,
@@ -70,6 +78,7 @@ def main(argv: list[str] | None = None) -> int:
             output_root=context.output_path,
             force=args.force,
             dry_run=args.dry_run,
+            num_workers=args.num_workers,
         )
         if not args.dry_run:
             write_matrix_summaries(context.output_path, result)

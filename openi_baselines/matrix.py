@@ -113,6 +113,7 @@ def execute_matrix(
     output_root: Path,
     force: bool = False,
     dry_run: bool = False,
+    num_workers: int | None = None,
     task_runner: TaskRunner = run_task,
 ) -> MatrixResult:
     output_root = Path(output_root)
@@ -128,6 +129,7 @@ def execute_matrix(
                 force=force,
                 dry_run=dry_run,
                 batch_sizes=dict(plan.batch_sizes),
+                num_workers=num_workers,
             )
             item = MatrixTaskResult(plan=plan, result=result)
         except Exception as exc:

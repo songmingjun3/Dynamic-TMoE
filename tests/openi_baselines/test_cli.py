@@ -89,6 +89,64 @@ def test_cli_accepts_per_horizon_batch_sizes(tmp_path, capsys):
     assert argv_192[argv_192.index("--batch_size") + 1] == "64"
 
 
+def test_cli_accepts_num_workers_and_applies_it_to_every_process(
+    tmp_path, capsys
+):
+    exit_code = main(
+        [
+            "--local",
+            "--code-root",
+            str(REPO_ROOT),
+            "--dataset-root",
+            str(REPO_ROOT / "dataset"),
+            "--output-root",
+            str(tmp_path),
+            "--model",
+            "ST-MTM",
+            "--dataset",
+            "ETTh1",
+            "--pred-len",
+            "96",
+            "--num-workers",
+            "2",
+            "--dry-run",
+        ]
+    )
+
+    output = json.loads(capsys.readouterr().out)
+    commands = output["commands"]["96"]
+    assert exit_code == 0
+    assert len(commands) == 2
+    assert all(
+        native_option(command, "--num_workers") == "2"
+        for command in commands
+    )
+
+
+def test_cli_rejects_non_positive_num_workers(tmp_path, capsys):
+    exit_code = main(
+        [
+            "--local",
+            "--code-root",
+            str(REPO_ROOT),
+            "--dataset-root",
+            str(REPO_ROOT / "dataset"),
+            "--output-root",
+            str(tmp_path),
+            "--model",
+            "DLinear",
+            "--dataset",
+            "ETTh1",
+            "--num-workers",
+            "0",
+            "--dry-run",
+        ]
+    )
+
+    assert exit_code == 2
+    assert "num-workers must be a positive integer" in capsys.readouterr().err
+
+
 def test_cli_rejects_incomplete_batch_size_mapping_before_training(
     tmp_path, capsys
 ):

@@ -444,11 +444,22 @@ def _with_batch_size(process: ProcessSpec, batch_size: int) -> ProcessSpec:
     return replace(process, argv=tuple(argv))
 
 
+def _with_num_workers(process: ProcessSpec, num_workers: int) -> ProcessSpec:
+    argv = list(process.argv)
+    option = "--num_workers"
+    if option in argv:
+        argv[argv.index(option) + 1] = str(num_workers)
+    else:
+        argv.extend((option, str(num_workers)))
+    return replace(process, argv=tuple(argv))
+
+
 def build_processes(
     task: TaskSpec,
     pred_len: int,
     layout: CommandLayout,
     batch_size: int | None = None,
+    num_workers: int | None = None,
 ) -> tuple[ProcessSpec, ...]:
     if pred_len not in task.horizons:
         raise ValueError(f"Unsupported prediction length {pred_len} for {task.model}/{task.dataset}")
@@ -460,5 +471,9 @@ def build_processes(
     if batch_size is not None:
         processes = tuple(
             _with_batch_size(process, batch_size) for process in processes
+        )
+    if num_workers is not None:
+        processes = tuple(
+            _with_num_workers(process, num_workers) for process in processes
         )
     return processes
