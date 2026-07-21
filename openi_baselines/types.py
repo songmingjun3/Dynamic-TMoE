@@ -26,3 +26,14 @@ class ProcessSpec:
     argv: tuple[str, ...]
     cwd: Path
     env: Mapping[str, str] = field(default_factory=dict)
+
+
+@dataclass(frozen=True)
+class AccelerationOptions:
+    use_amp: bool = False
+    patience: int | None = None
+    pin_memory: bool | None = None
+    persistent_workers: bool | None = None
+    prefetch_factor: int | None = None
+    cudnn_benchmark: bool | None = None
+    cpu_threads: int | None = None

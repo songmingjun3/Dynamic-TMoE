@@ -10,7 +10,7 @@ from typing import Callable, Mapping
 from .paths import DatasetLocation
 from .registry import parse_batch_sizes, parse_pred_lengths
 from .runner import RunResult, run_task
-from .types import TaskSpec
+from .types import AccelerationOptions, TaskSpec
 
 
 @dataclass(frozen=True)
@@ -114,6 +114,7 @@ def execute_matrix(
     force: bool = False,
     dry_run: bool = False,
     num_workers: int | None = None,
+    acceleration: AccelerationOptions | None = None,
     task_runner: TaskRunner = run_task,
 ) -> MatrixResult:
     output_root = Path(output_root)
@@ -130,6 +131,7 @@ def execute_matrix(
                 dry_run=dry_run,
                 batch_sizes=dict(plan.batch_sizes),
                 num_workers=num_workers,
+                acceleration=acceleration,
             )
             item = MatrixTaskResult(plan=plan, result=result)
         except Exception as exc:

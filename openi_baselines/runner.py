@@ -15,11 +15,18 @@ from .artifacts import collect_artifacts
 from .commands import CommandLayout, build_processes
 from .metrics import find_metrics, write_metrics
 from .paths import DatasetLocation
-from .types import ProcessSpec, TaskSpec
+from .types import AccelerationOptions, ProcessSpec, TaskSpec
 
 
 ProcessBuilder = Callable[
-    [TaskSpec, int, CommandLayout, int | None, int | None],
+    [
+        TaskSpec,
+        int,
+        CommandLayout,
+        int | None,
+        int | None,
+        AccelerationOptions | None,
+    ],
     tuple[ProcessSpec, ...],
 ]
 
@@ -173,6 +180,7 @@ def run_task(
     dry_run: bool = False,
     batch_sizes: dict[int, int] | None = None,
     num_workers: int | None = None,
+    acceleration: AccelerationOptions | None = None,
     process_builder: ProcessBuilder = build_processes,
 ) -> RunResult:
     dataset_output = Path(output_root) / task.model / task.dataset
@@ -198,6 +206,7 @@ def run_task(
             layout,
             batch_sizes.get(pred_len),
             num_workers,
+            acceleration,
         )
         commands[pred_len] = [_command_payload(process) for process in processes]
 

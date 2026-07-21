@@ -3,6 +3,7 @@ from data_provider.data_loader import Dataset_ETT_hour, Dataset_ETT_minute, Data
     Dataset_Solar
 from data_provider.uea import collate_fn
 from torch.utils.data import DataLoader
+from openi_baselines.native import loader_kwargs
 
 data_dict = {
     'ETTh1': Dataset_ETT_hour,
@@ -53,7 +54,8 @@ def data_provider(args, flag):
             batch_size=batch_size,
             shuffle=shuffle_flag,
             num_workers=args.num_workers,
-            drop_last=drop_last)
+            drop_last=drop_last,
+            **loader_kwargs(args))
         return data_set, data_loader
     elif args.task_name == 'classification':
         drop_last = False
@@ -68,7 +70,8 @@ def data_provider(args, flag):
             shuffle=shuffle_flag,
             num_workers=args.num_workers,
             drop_last=drop_last,
-            collate_fn=lambda x: collate_fn(x, max_len=args.seq_len)
+            collate_fn=lambda x: collate_fn(x, max_len=args.seq_len),
+            **loader_kwargs(args)
         )
         return data_set, data_loader
     else:
@@ -91,5 +94,6 @@ def data_provider(args, flag):
             batch_size=batch_size,
             shuffle=shuffle_flag,
             num_workers=args.num_workers,
-            drop_last=drop_last)
+            drop_last=drop_last,
+            **loader_kwargs(args))
         return data_set, data_loader

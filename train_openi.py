@@ -16,6 +16,7 @@ from openi_baselines.registry import (
     UnsupportedTaskError,
     parse_task_matrix,
 )
+from openi_baselines.types import AccelerationOptions
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -35,6 +36,29 @@ def build_parser() -> argparse.ArgumentParser:
         type=int,
         default=None,
         help="Override the DataLoader worker count for every selected baseline",
+    )
+    parser.add_argument("--use-amp", action="store_true")
+    parser.add_argument("--patience", type=int)
+    parser.add_argument(
+        "--pin-memory",
+        action=argparse.BooleanOptionalAction,
+        default=None,
+    )
+    parser.add_argument(
+        "--persistent-workers",
+        action=argparse.BooleanOptionalAction,
+        default=None,
+    )
+    parser.add_argument("--prefetch-factor", type=int)
+    parser.add_argument(
+        "--cudnn-benchmark",
+        action=argparse.BooleanOptionalAction,
+        default=None,
+    )
+    parser.add_argument(
+        "--cpu-threads",
+        type=int,
+        help="Set OMP_NUM_THREADS and MKL_NUM_THREADS for native processes",
     )
     parser.add_argument("--force", action="store_true")
     parser.add_argument("--dry-run", action="store_true")
@@ -57,6 +81,21 @@ def main(argv: list[str] | None = None) -> int:
         )
         if args.num_workers is not None and args.num_workers <= 0:
             raise ValueError("num-workers must be a positive integer")
+        for name in ("patience", "prefetch_factor", "cpu_threads"):
+            value = getattr(args, name)
+            if value is not None and value <= 0:
+                raise ValueError(
+                    f"{name.replace('_', '-')} must be a positive integer"
+                )
+        acceleration = AccelerationOptions(
+            use_amp=args.use_amp,
+            patience=args.patience,
+            pin_memory=args.pin_memory,
+            persistent_workers=args.persistent_workers,
+            prefetch_factor=args.prefetch_factor,
+            cudnn_benchmark=args.cudnn_benchmark,
+            cpu_threads=args.cpu_threads,
+        )
         context = prepare_platform(
             local=args.local,
             code_root=args.code_root,
@@ -79,6 +118,7 @@ def main(argv: list[str] | None = None) -> int:
             force=args.force,
             dry_run=args.dry_run,
             num_workers=args.num_workers,
+            acceleration=acceleration,
         )
         if not args.dry_run:
             write_matrix_summaries(context.output_path, result)

@@ -86,6 +86,8 @@ python -u train_openi.py \
 
 `--num-workers` 可选，用于统一覆盖所有选中 baseline 的 DataLoader worker 数量，必须是正整数。例如 `--num-workers 2`。不传时保留各 baseline 的原始默认值；ST-MTM 会同时应用到预训练和微调阶段。
 
+训练加速还可使用 `--use-amp`、`--patience`、`--pin-memory`、`--persistent-workers`、`--prefetch-factor`、`--cudnn-benchmark` 和 `--cpu-threads`。V100 32GB 的分模型建议见 [V100 32GB Baseline 训练加速参数矩阵](v100-32gb-training-acceleration-matrix.md)。
+
 ST-MTM 的某个预测长度设置 batch size 后，该值会同时用于对应的预训练和微调阶段。多个预测长度仍然顺序执行，不会同时占用 GPU 显存。
 
 不传 `--pred-len` 或传入 `all` 时，每个数据集使用自身标准预测长度。矩阵同时包含普通数据集和 ILI 且需要覆盖 batch size 时，映射必须包含实际 horizon 的并集：

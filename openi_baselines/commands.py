@@ -1,11 +1,12 @@
 from __future__ import annotations
 
+import os
 import sys
 from dataclasses import dataclass, replace
 from pathlib import Path
 
 from .paths import DatasetLocation
-from .types import ProcessSpec, TaskSpec
+from .types import AccelerationOptions, ProcessSpec, TaskSpec
 
 
 @dataclass(frozen=True)
@@ -45,11 +46,19 @@ def _base_process(
     cwd = layout.task_output / "native_work" / stage
     cwd.mkdir(parents=True, exist_ok=True)
     entrypoint = layout.repo_root / task.entrypoint
+    python_path = str(layout.repo_root)
+    inherited_python_path = os.environ.get("PYTHONPATH")
+    if inherited_python_path:
+        python_path = os.pathsep.join((python_path, inherited_python_path))
     return ProcessSpec(
         stage=stage,
         argv=(sys.executable, "-u", str(entrypoint), *argv),
         cwd=cwd,
-        env={"CUDA_VISIBLE_DEVICES": "0", "PYTHONUNBUFFERED": "1"},
+        env={
+            "CUDA_VISIBLE_DEVICES": "0",
+            "PYTHONUNBUFFERED": "1",
+            "PYTHONPATH": python_path,
+        },
     )
 
 
@@ -454,12 +463,59 @@ def _with_num_workers(process: ProcessSpec, num_workers: int) -> ProcessSpec:
     return replace(process, argv=tuple(argv))
 
 
+def _with_value_option(
+    process: ProcessSpec, option: str, value: object
+) -> ProcessSpec:
+    argv = list(process.argv)
+    if option in argv:
+        argv[argv.index(option) + 1] = str(value)
+    else:
+        argv.extend((option, str(value)))
+    return replace(process, argv=tuple(argv))
+
+
+def _with_flag(process: ProcessSpec, option: str) -> ProcessSpec:
+    if option in process.argv:
+        return process
+    return replace(process, argv=(*process.argv, option))
+
+
+def _with_acceleration(
+    process: ProcessSpec, options: AccelerationOptions
+) -> ProcessSpec:
+    if options.use_amp:
+        process = _with_flag(process, "--use_amp")
+    if options.patience is not None:
+        process = _with_value_option(
+            process, "--patience", options.patience
+        )
+
+    env = dict(process.env)
+    environment_options = {
+        "OPENI_PIN_MEMORY": options.pin_memory,
+        "OPENI_PERSISTENT_WORKERS": options.persistent_workers,
+        "OPENI_PREFETCH_FACTOR": options.prefetch_factor,
+        "OPENI_CUDNN_BENCHMARK": options.cudnn_benchmark,
+    }
+    for name, value in environment_options.items():
+        if value is not None:
+            env[name] = (
+                "1" if isinstance(value, bool) and value else
+                "0" if isinstance(value, bool) else str(value)
+            )
+    if options.cpu_threads is not None:
+        env["OMP_NUM_THREADS"] = str(options.cpu_threads)
+        env["MKL_NUM_THREADS"] = str(options.cpu_threads)
+    return replace(process, env=env)
+
+
 def build_processes(
     task: TaskSpec,
     pred_len: int,
     layout: CommandLayout,
     batch_size: int | None = None,
     num_workers: int | None = None,
+    acceleration: AccelerationOptions | None = None,
 ) -> tuple[ProcessSpec, ...]:
     if pred_len not in task.horizons:
         raise ValueError(f"Unsupported prediction length {pred_len} for {task.model}/{task.dataset}")
@@ -475,5 +531,10 @@ def build_processes(
     if num_workers is not None:
         processes = tuple(
             _with_num_workers(process, num_workers) for process in processes
+        )
+    if acceleration is not None:
+        processes = tuple(
+            _with_acceleration(process, acceleration)
+            for process in processes
         )
     return processes

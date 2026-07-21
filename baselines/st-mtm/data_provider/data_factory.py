@@ -1,5 +1,6 @@
 from data_provider.data_loader import Dataset_ETT_hour, Dataset_ETT_minute, Dataset_Custom, Dataset_PEMS, Dataset_Solar
 from torch.utils.data import DataLoader
+from openi_baselines.native import loader_kwargs
 
 import torch
 import numpy as np
@@ -53,7 +54,8 @@ def data_provider(args, flag):
         batch_size=batch_size,
         shuffle=shuffle_flag,
         num_workers=args.num_workers,
-        drop_last=drop_last)
+        drop_last=drop_last,
+        **loader_kwargs(args))
     
     print(flag, len(data_set), len(data_loader))
     return data_set, data_loader

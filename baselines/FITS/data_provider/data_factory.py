@@ -1,5 +1,6 @@
 from data_provider.data_loader import Dataset_ETT_hour, Dataset_ETT_minute, Dataset_Custom, Dataset_Pred
 from torch.utils.data import DataLoader
+from openi_baselines.native import loader_kwargs
 
 data_dict = {
     'ETTh1': Dataset_ETT_hour,
@@ -47,6 +48,7 @@ def data_provider(args, flag):
         data_set,
         batch_size=batch_size,
         shuffle=shuffle_flag,
-        num_workers=0,
-        drop_last=drop_last)
+        num_workers=args.num_workers,
+        drop_last=drop_last,
+        **loader_kwargs(args))
     return data_set, data_loader

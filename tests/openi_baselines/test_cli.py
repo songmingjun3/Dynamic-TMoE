@@ -147,6 +147,75 @@ def test_cli_rejects_non_positive_num_workers(tmp_path, capsys):
     assert "num-workers must be a positive integer" in capsys.readouterr().err
 
 
+def test_cli_accepts_acceleration_options(tmp_path, capsys):
+    exit_code = main(
+        [
+            "--local",
+            "--code-root",
+            str(REPO_ROOT),
+            "--dataset-root",
+            str(REPO_ROOT / "dataset"),
+            "--output-root",
+            str(tmp_path),
+            "--model",
+            "PatchTST",
+            "--dataset",
+            "ETTh1",
+            "--pred-len",
+            "96",
+            "--use-amp",
+            "--patience",
+            "4",
+            "--pin-memory",
+            "--persistent-workers",
+            "--prefetch-factor",
+            "2",
+            "--cudnn-benchmark",
+            "--cpu-threads",
+            "1",
+            "--dry-run",
+        ]
+    )
+
+    output = json.loads(capsys.readouterr().out)
+    command = output["commands"]["96"][0]
+    assert exit_code == 0
+    assert "--use_amp" in command["argv"]
+    assert native_option(command, "--patience") == "4"
+    assert command["env"]["OPENI_PIN_MEMORY"] == "1"
+    assert command["env"]["OPENI_PERSISTENT_WORKERS"] == "1"
+    assert command["env"]["OPENI_PREFETCH_FACTOR"] == "2"
+    assert command["env"]["OPENI_CUDNN_BENCHMARK"] == "1"
+    assert command["env"]["OMP_NUM_THREADS"] == "1"
+
+
+def test_cli_rejects_non_positive_acceleration_values(tmp_path, capsys):
+    exit_code = main(
+        [
+            "--local",
+            "--code-root",
+            str(REPO_ROOT),
+            "--dataset-root",
+            str(REPO_ROOT / "dataset"),
+            "--output-root",
+            str(tmp_path),
+            "--model",
+            "DLinear",
+            "--dataset",
+            "ETTh1",
+            "--prefetch-factor",
+            "0",
+            "--dry-run",
+        ]
+    )
+
+    assert exit_code == 2
+    assert (
+        "prefetch-factor must be a positive integer"
+        in capsys.readouterr().err
+    )
+
+
 def test_cli_rejects_incomplete_batch_size_mapping_before_training(
     tmp_path, capsys
 ):

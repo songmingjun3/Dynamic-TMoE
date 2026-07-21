@@ -6,6 +6,7 @@ import pytest
 from openi_baselines.commands import CommandLayout, build_processes
 from openi_baselines.paths import resolve_dataset_file
 from openi_baselines.registry import get_task, iter_tasks
+from openi_baselines.types import AccelerationOptions
 
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
@@ -142,3 +143,33 @@ def test_stmtm_num_workers_override_applies_to_both_stages(tmp_path):
     assert [
         option(process.argv, "--num_workers") for process in processes
     ] == ["2", "2"]
+
+
+def test_acceleration_options_apply_native_args_and_environment(tmp_path):
+    layout = make_layout(tmp_path, "ETTh1")
+    acceleration = AccelerationOptions(
+        use_amp=True,
+        patience=4,
+        pin_memory=True,
+        persistent_workers=True,
+        prefetch_factor=2,
+        cudnn_benchmark=True,
+        cpu_threads=1,
+    )
+
+    process = build_processes(
+        get_task("PatchTST", "ETTh1"),
+        96,
+        layout,
+        acceleration=acceleration,
+    )[0]
+
+    assert process.argv.count("--use_amp") == 1
+    assert option(process.argv, "--patience") == "4"
+    assert process.env["OPENI_PIN_MEMORY"] == "1"
+    assert process.env["OPENI_PERSISTENT_WORKERS"] == "1"
+    assert process.env["OPENI_PREFETCH_FACTOR"] == "2"
+    assert process.env["OPENI_CUDNN_BENCHMARK"] == "1"
+    assert process.env["OMP_NUM_THREADS"] == "1"
+    assert process.env["MKL_NUM_THREADS"] == "1"
+    assert str(REPO_ROOT) in process.env["PYTHONPATH"]

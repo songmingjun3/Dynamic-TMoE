@@ -2,6 +2,7 @@ from data_provider.data_loader import Dataset_ETT_hour, Dataset_ETT_minute, Data
     MSLSegLoader, SMAPSegLoader, SMDSegLoader, SWATSegLoader, UEAloader
 from data_provider.uea import collate_fn
 from torch.utils.data import DataLoader
+from openi_baselines.native import loader_kwargs
 
 data_dict = {
     'ETTh1': Dataset_ETT_hour,
@@ -43,9 +44,12 @@ def data_provider(args, flag):
             shuffle=shuffle_flag,
             num_workers=args.num_workers,
             drop_last=drop_last,
-            pin_memory=True,
-            persistent_workers=True if args.num_workers > 0 else False,
-            prefetch_factor=2 if args.num_workers > 0 else None)
+            **loader_kwargs(
+                args,
+                default_pin_memory=True,
+                default_persistent_workers=True,
+                default_prefetch_factor=2,
+            ))
         return data_set, data_loader
     elif args.task_name == 'classification':
         drop_last = False
@@ -62,8 +66,12 @@ def data_provider(args, flag):
             num_workers=args.num_workers,
             drop_last=drop_last,
             collate_fn=lambda x: collate_fn(x, max_len=args.seq_len),
-            pin_memory=True,
-            persistent_workers=True if args.num_workers > 0 else False
+            **loader_kwargs(
+                args,
+                default_pin_memory=True,
+                default_persistent_workers=True,
+                default_prefetch_factor=2,
+            )
         )
         return data_set, data_loader
     else:
@@ -88,7 +96,10 @@ def data_provider(args, flag):
             shuffle=shuffle_flag,
             num_workers=args.num_workers,
             drop_last=drop_last,
-            pin_memory=True,
-            persistent_workers=True if args.num_workers > 0 else False,
-            prefetch_factor=2 if args.num_workers > 0 else None)
+            **loader_kwargs(
+                args,
+                default_pin_memory=True,
+                default_persistent_workers=True,
+                default_prefetch_factor=2,
+            ))
         return data_set, data_loader
