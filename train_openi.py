@@ -19,6 +19,15 @@ from openi_baselines.registry import (
 from openi_baselines.types import AccelerationOptions
 
 
+def parse_bool(value: str) -> bool:
+    normalized = value.strip().casefold()
+    if normalized == "true":
+        return True
+    if normalized == "false":
+        return False
+    raise argparse.ArgumentTypeError("expected true or false")
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         description="Run OpenI baseline/dataset reproduction tasks"
@@ -37,7 +46,12 @@ def build_parser() -> argparse.ArgumentParser:
         default=None,
         help="Override the DataLoader worker count for every selected baseline",
     )
-    parser.add_argument("--use-amp", action="store_true")
+    parser.add_argument(
+        "--use-amp",
+        type=parse_bool,
+        default=False,
+        metavar="{true,false}",
+    )
     parser.add_argument("--patience", type=int)
     parser.add_argument(
         "--pin-memory",

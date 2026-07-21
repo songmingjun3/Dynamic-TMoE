@@ -164,6 +164,7 @@ def test_cli_accepts_acceleration_options(tmp_path, capsys):
             "--pred-len",
             "96",
             "--use-amp",
+            "true",
             "--patience",
             "4",
             "--pin-memory",
@@ -187,6 +188,36 @@ def test_cli_accepts_acceleration_options(tmp_path, capsys):
     assert command["env"]["OPENI_PREFETCH_FACTOR"] == "2"
     assert command["env"]["OPENI_CUDNN_BENCHMARK"] == "1"
     assert command["env"]["OMP_NUM_THREADS"] == "1"
+
+
+def test_cli_accepts_false_amp_value_without_forwarding_native_flag(
+    tmp_path, capsys
+):
+    exit_code = main(
+        [
+            "--local",
+            "--code-root",
+            str(REPO_ROOT),
+            "--dataset-root",
+            str(REPO_ROOT / "dataset"),
+            "--output-root",
+            str(tmp_path),
+            "--model",
+            "DLinear",
+            "--dataset",
+            "ETTh1",
+            "--pred-len",
+            "96",
+            "--use-amp",
+            "false",
+            "--dry-run",
+        ]
+    )
+
+    output = json.loads(capsys.readouterr().out)
+    command = output["commands"]["96"][0]
+    assert exit_code == 0
+    assert "--use_amp" not in command["argv"]
 
 
 def test_cli_rejects_non_positive_acceleration_values(tmp_path, capsys):

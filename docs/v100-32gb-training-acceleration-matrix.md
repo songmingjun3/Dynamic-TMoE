@@ -13,7 +13,7 @@
 | 参数 | 作用 | 推荐起点 |
 | --- | --- | --- |
 | `--num-workers N` | DataLoader 进程数 | 通用 `4`；DLinear/FITS 可用 `6`；ILI 用 `2` |
-| `--use-amp` | 向原生模型传入 AMP 开关 | 仅用于推荐开启的模型 |
+| `--use-amp true|false` | 向原生模型传入 AMP 开关 | 推荐模型填 `true`，其余填 `false` |
 | `--patience N` | 覆盖原生 early stopping patience | `3` 或 `5` |
 | `--pin-memory` / `--no-pin-memory` | 锁页内存 | 开启 |
 | `--persistent-workers` / `--no-persistent-workers` | epoch 间保留 worker | 开启 |
@@ -76,13 +76,13 @@ TimesNet 说明：Electricity、Traffic 和 ILI 使用的 `d_model` 明显大于
 PatchTST 在低维数据集上的示例：
 
 ```text
---model PatchTST --dataset ETTh1,ETTh2,ETTm1,ETTm2,Exchange,Weather --pred-len all --batch-size 96:128,192:64,336:32,720:16 --num-workers 4 --use-amp --patience 5 --pin-memory --persistent-workers --prefetch-factor 2 --cpu-threads 1
+--model PatchTST --dataset ETTh1,ETTh2,ETTm1,ETTm2,Exchange,Weather --pred-len all --batch-size 96:128,192:64,336:32,720:16 --num-workers 4 --use-amp true --patience 5 --pin-memory --persistent-workers --prefetch-factor 2 --cpu-threads 1
 ```
 
 TimesNet 在 Traffic 上的示例：
 
 ```text
---model TimesNet --dataset Traffic --pred-len all --batch-size 96:4,192:2,336:1,720:1 --num-workers 4 --use-amp --patience 3 --pin-memory --persistent-workers --prefetch-factor 2 --cudnn-benchmark --cpu-threads 1
+--model TimesNet --dataset Traffic --pred-len all --batch-size 96:4,192:2,336:1,720:1 --num-workers 4 --use-amp true --patience 3 --pin-memory --persistent-workers --prefetch-factor 2 --cudnn-benchmark --cpu-threads 1
 ```
 
 DLinear 在低维数据集上的示例：
