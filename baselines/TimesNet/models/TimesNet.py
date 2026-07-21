@@ -8,14 +8,18 @@ from layers.Conv_Blocks import Inception_Block_V1
 
 def FFT_for_Period(x, k=2):
     # [B, T, C]
-    xf = torch.fft.rfft(x, dim=1)
+    # cuFFT only supports power-of-two signal lengths for FP16. TimesNet
+    # transforms seq_len + pred_len (for example 96 + 720 = 816), so keep
+    # only the FFT in FP32 while allowing the convolution blocks to use AMP.
+    xf = torch.fft.rfft(x.float(), dim=1)
     # find period by amplitudes
     frequency_list = abs(xf).mean(0).mean(-1)
     frequency_list[0] = 0
     _, top_list = torch.topk(frequency_list, k)
     top_list = top_list.detach().cpu().numpy()
     period = x.shape[1] // top_list
-    return period, abs(xf).mean(-1)[:, top_list]
+    period_weight = abs(xf).mean(-1)[:, top_list].to(dtype=x.dtype)
+    return period, period_weight
 
 
 class TimesBlock(nn.Module):
@@ -44,7 +48,13 @@ class TimesBlock(nn.Module):
             if (self.seq_len + self.pred_len) % period != 0:
                 length = (
                                  ((self.seq_len + self.pred_len) // period) + 1) * period
-                padding = torch.zeros([x.shape[0], (length - (self.seq_len + self.pred_len)), x.shape[2]]).to(x.device)
+                padding = x.new_zeros(
+                    [
+                        x.shape[0],
+                        length - (self.seq_len + self.pred_len),
+                        x.shape[2],
+                    ]
+                )
                 out = torch.cat([x, padding], dim=1)
             else:
                 length = (self.seq_len + self.pred_len)
