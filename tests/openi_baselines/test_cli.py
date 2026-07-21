@@ -168,10 +168,13 @@ def test_cli_accepts_acceleration_options(tmp_path, capsys):
             "--patience",
             "4",
             "--pin-memory",
+            "true",
             "--persistent-workers",
+            "true",
             "--prefetch-factor",
             "2",
             "--cudnn-benchmark",
+            "true",
             "--cpu-threads",
             "1",
             "--dry-run",
@@ -210,6 +213,12 @@ def test_cli_accepts_false_amp_value_without_forwarding_native_flag(
             "96",
             "--use-amp",
             "false",
+            "--pin-memory",
+            "false",
+            "--persistent-workers",
+            "false",
+            "--cudnn-benchmark",
+            "false",
             "--dry-run",
         ]
     )
@@ -218,6 +227,9 @@ def test_cli_accepts_false_amp_value_without_forwarding_native_flag(
     command = output["commands"]["96"][0]
     assert exit_code == 0
     assert "--use_amp" not in command["argv"]
+    assert command["env"]["OPENI_PIN_MEMORY"] == "0"
+    assert command["env"]["OPENI_PERSISTENT_WORKERS"] == "0"
+    assert command["env"]["OPENI_CUDNN_BENCHMARK"] == "0"
 
 
 def test_cli_rejects_non_positive_acceleration_values(tmp_path, capsys):

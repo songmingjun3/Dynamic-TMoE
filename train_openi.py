@@ -55,19 +55,22 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--patience", type=int)
     parser.add_argument(
         "--pin-memory",
-        action=argparse.BooleanOptionalAction,
+        type=parse_bool,
         default=None,
+        metavar="{true,false}",
     )
     parser.add_argument(
         "--persistent-workers",
-        action=argparse.BooleanOptionalAction,
+        type=parse_bool,
         default=None,
+        metavar="{true,false}",
     )
     parser.add_argument("--prefetch-factor", type=int)
     parser.add_argument(
         "--cudnn-benchmark",
-        action=argparse.BooleanOptionalAction,
+        type=parse_bool,
         default=None,
+        metavar="{true,false}",
     )
     parser.add_argument(
         "--cpu-threads",

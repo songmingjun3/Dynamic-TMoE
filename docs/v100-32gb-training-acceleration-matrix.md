@@ -15,10 +15,10 @@
 | `--num-workers N` | DataLoader 进程数 | 通用 `4`；DLinear/FITS 可用 `6`；ILI 用 `2` |
 | `--use-amp true|false` | 向原生模型传入 AMP 开关 | 推荐模型填 `true`，其余填 `false` |
 | `--patience N` | 覆盖原生 early stopping patience | `3` 或 `5` |
-| `--pin-memory` / `--no-pin-memory` | 锁页内存 | 开启 |
-| `--persistent-workers` / `--no-persistent-workers` | epoch 间保留 worker | 开启 |
+| `--pin-memory true|false` | 锁页内存 | `true` |
+| `--persistent-workers true|false` | epoch 间保留 worker | `true` |
 | `--prefetch-factor N` | 每个 worker 预取 batch 数 | `2` |
-| `--cudnn-benchmark` / `--no-cudnn-benchmark` | 固定形状下选择更快 cuDNN 算法 | 仅卷积型模型开启 |
+| `--cudnn-benchmark true|false` | 固定形状下选择更快 cuDNN 算法 | 卷积型模型填 `true`，其余填 `false` |
 | `--cpu-threads N` | 同时设置 OMP/MKL 线程数 | `1` |
 
 不传这些参数时保留各 baseline 原有行为。`--prefetch-factor` 只在 worker 数大于 0 时生效。统一入口会把 DataLoader 配置通过环境传到原生 baseline，并记录在每个任务的 `command.json` 中。
@@ -61,7 +61,7 @@
 | TimeMixer | `4` | 开启 | 5 | 关闭 | `256/128/64/32` | `64/32/16/8` | `32/16/8/4` | 不支持 |
 | TimesNet | `4`（ILI `2`） | 开启 | 3 | 开启 | `128/64/32/16` | `16/8/4/2` | `4/2/1/1` | `8/8/4/4` |
 
-共同推荐：`--pin-memory --persistent-workers --prefetch-factor 2 --cpu-threads 1`。worker 数按上表选择；Traffic 保持 `4`，不要因为内存充足就直接提高到 `8`。
+共同推荐：`--pin-memory true --persistent-workers true --prefetch-factor 2 --cpu-threads 1`。worker 数按上表选择；Traffic 保持 `4`，不要因为内存充足就直接提高到 `8`。
 
 AMP 说明：FITS 和 ST-MTM 虽然原生解析器接受 `--use_amp`，当前训练循环没有完整的 AMP 计算路径，因此矩阵中保持关闭。DLinear 计算量太小，AMP 转换开销可能抵消收益，也保持关闭。
 
@@ -76,19 +76,19 @@ TimesNet 说明：Electricity、Traffic 和 ILI 使用的 `d_model` 明显大于
 PatchTST 在低维数据集上的示例：
 
 ```text
---model PatchTST --dataset ETTh1,ETTh2,ETTm1,ETTm2,Exchange,Weather --pred-len all --batch-size 96:128,192:64,336:32,720:16 --num-workers 4 --use-amp true --patience 5 --pin-memory --persistent-workers --prefetch-factor 2 --cpu-threads 1
+--model PatchTST --dataset ETTh1,ETTh2,ETTm1,ETTm2,Exchange,Weather --pred-len all --batch-size 96:128,192:64,336:32,720:16 --num-workers 4 --use-amp true --patience 5 --pin-memory true --persistent-workers true --prefetch-factor 2 --cudnn-benchmark false --cpu-threads 1
 ```
 
 TimesNet 在 Traffic 上的示例：
 
 ```text
---model TimesNet --dataset Traffic --pred-len all --batch-size 96:4,192:2,336:1,720:1 --num-workers 4 --use-amp true --patience 3 --pin-memory --persistent-workers --prefetch-factor 2 --cudnn-benchmark --cpu-threads 1
+--model TimesNet --dataset Traffic --pred-len all --batch-size 96:4,192:2,336:1,720:1 --num-workers 4 --use-amp true --patience 3 --pin-memory true --persistent-workers true --prefetch-factor 2 --cudnn-benchmark true --cpu-threads 1
 ```
 
 DLinear 在低维数据集上的示例：
 
 ```text
---model DLinear --dataset ETTh1,ETTh2,ETTm1,ETTm2,Exchange,Weather --pred-len all --batch-size 96:512,192:256,336:128,720:64 --num-workers 6 --patience 3 --pin-memory --persistent-workers --prefetch-factor 2 --cpu-threads 1
+--model DLinear --dataset ETTh1,ETTh2,ETTm1,ETTm2,Exchange,Weather --pred-len all --batch-size 96:512,192:256,336:128,720:64 --num-workers 6 --use-amp false --patience 3 --pin-memory true --persistent-workers true --prefetch-factor 2 --cudnn-benchmark false --cpu-threads 1
 ```
 
 ## 调优判定规则
