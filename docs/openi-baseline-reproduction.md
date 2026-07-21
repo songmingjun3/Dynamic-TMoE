@@ -8,6 +8,8 @@ DLinear、FEDformer、FITS、PatchTST、RAFT、ST-MTM、TFPS 和 TimesNet 支持
 
 常规数据集的标准预测长度为 `96,192,336,720`，ILI 为 `24,36,48,60`。ST-MTM 自动依次运行预训练和微调。
 
+需要一次提交全部受支持实验时，请使用[全部 Baseline 实验运行参数](openi-all-baseline-run-parameters.md)。
+
 ## 构建镜像要求
 
 镜像需要包含项目 baseline 依赖，并额外包含启智平台 SDK：
