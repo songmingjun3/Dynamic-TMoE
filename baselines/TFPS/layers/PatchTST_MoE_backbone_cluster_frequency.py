@@ -15,6 +15,20 @@ from layers.SparseMoE import SparseMoE
 from layers.Cluster import EDESC
 
 
+def fft2_real_fp32(x):
+    """Run the two-dimensional FFT in FP32 and preserve the caller dtype."""
+    original_dtype = x.dtype
+    transformed = torch.fft.fft(torch.fft.fft(x.float(), dim=-1), dim=-2)
+    return transformed.real.to(dtype=original_dtype)
+
+
+def ifft2_real_fp32(x):
+    """Run the two-dimensional inverse FFT in FP32 and preserve caller dtype."""
+    original_dtype = x.dtype
+    transformed = torch.fft.ifft(torch.fft.ifft(x.float(), dim=-2), dim=-1)
+    return transformed.real.to(dtype=original_dtype)
+
+
 # Cell
 class PatchTST_MoE_cluster_frequency(nn.Module):
     def __init__(self, bs: int, c_in: int, c_out: int, context_window: int, target_window: int, patch_len: int, stride: int,
@@ -88,7 +102,9 @@ class PatchTST_MoE_cluster_frequency(nn.Module):
         time_z = torch.reshape(time_z, (time_z.shape[0], time_z.shape[1], nvars, -1))                           # z: [bs x patch_num_out x nvars x d_model]
         time_z = time_z.permute(0, 2, 3, 1)                                                                     # z: [bs x nvars x d_model x patch_num_out]
 
-        time_z = torch.fft.ifft(torch.fft.ifft(time_z, dim=-2), dim=-1).real
+        # cuFFT only supports power-of-two signal lengths for FP16. The patch
+        # axis is commonly 12, so keep only the inverse FFT in FP32 under AMP.
+        time_z = ifft2_real_fp32(time_z)
         # time_z = torch.fft.irfft(time_z, n=self.patch_num_out, dim=-1)
 
         # time_z = self.head(time_z)  # z: [bs x nvars x patch_num_out x patch_len]
@@ -313,7 +329,8 @@ class _FNetBlock(nn.Module):
 
     def forward(self, x):
         # print(x.shape)  # torch.Size([896, 12, 16])  # x: [bs * nvars x patch_num_in x d_model]
-        x = torch.fft.fft(torch.fft.fft(x, dim=-1), dim=-2).real
+        # Keep non-power-of-two patch axes compatible with CUDA AMP.
+        x = fft2_real_fp32(x)
         # print(x.shape)  # torch.Size([896, 12, 16])  # x: [bs * nvars x patch_num_in x d_model]
         return x
 

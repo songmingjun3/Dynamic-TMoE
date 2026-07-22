@@ -112,10 +112,16 @@ class AutoCorrelation(nn.Module):
             keys = keys[:, :L, :, :]
 
         # period-based dependencies
-        q_fft = torch.fft.rfft(queries.permute(0, 2, 3, 1).contiguous(), dim=-1)
-        k_fft = torch.fft.rfft(keys.permute(0, 2, 3, 1).contiguous(), dim=-1)
+        # Run FFT in FP32 because CUDA FP16 FFT rejects non-power-of-two
+        # sequence lengths. Cast the real correlation back for AMP parity.
+        q_fft = torch.fft.rfft(
+            queries.permute(0, 2, 3, 1).contiguous().float(), dim=-1
+        )
+        k_fft = torch.fft.rfft(
+            keys.permute(0, 2, 3, 1).contiguous().float(), dim=-1
+        )
         res = q_fft * torch.conj(k_fft)
-        corr = torch.fft.irfft(res, dim=-1)
+        corr = torch.fft.irfft(res, n=L, dim=-1).to(dtype=queries.dtype)
 
         # time delay agg
         if self.training:
