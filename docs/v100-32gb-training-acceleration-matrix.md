@@ -67,6 +67,8 @@ AMP 说明：FITS 和 ST-MTM 虽然原生解析器接受 `--use_amp`，当前训
 
 TimesNet 的周期检测 FFT 固定使用 FP32，以兼容 `seq_len + pred_len` 不是 2 的幂的情况（例如 `96 + 720 = 816`）；其余卷积计算仍可使用 AMP。
 
+FEDformer 的 FFT/IFFT 同样固定使用 FP32，以兼容 ETT 的长度 `96`；频域层之外的计算仍可使用 AMP。
+
 ST-MTM 说明：统一 batch size 会同时覆盖预训练和微调阶段。表中采用预训练也能承受的保守值，避免只按微调阶段放大导致预训练 OOM。
 
 TimesNet 说明：Electricity、Traffic 和 ILI 使用的 `d_model` 明显大于 ETT/Weather，不能沿用低维数据集的大 batch；尤其 Traffic 建议从表中值开始，不要直接翻倍。

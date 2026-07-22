@@ -51,13 +51,13 @@ class FourierBlock(nn.Module):
         B, L, H, E = q.shape
         x = q.permute(0, 2, 3, 1)
         # Compute Fourier coefficients
-        x_ft = torch.fft.rfft(x, dim=-1)
+        x_ft = torch.fft.rfft(x.float(), dim=-1)
         # Perform Fourier neural operations
         out_ft = torch.zeros(B, H, E, L // 2 + 1, device=x.device, dtype=torch.cfloat)
         for wi, i in enumerate(self.index):
             out_ft[:, :, :, wi] = self.compl_mul1d(x_ft[:, :, :, i], self.weights1[:, :, :, wi])
         # Return to time domain
-        x = torch.fft.irfft(out_ft, n=x.size(-1))
+        x = torch.fft.irfft(out_ft, n=x.size(-1)).to(dtype=q.dtype)
         return (x, None)
 
 
@@ -98,11 +98,11 @@ class FourierCrossAttention(nn.Module):
 
         # Compute Fourier coefficients
         xq_ft_ = torch.zeros(B, H, E, len(self.index_q), device=xq.device, dtype=torch.cfloat)
-        xq_ft = torch.fft.rfft(xq, dim=-1)
+        xq_ft = torch.fft.rfft(xq.float(), dim=-1)
         for i, j in enumerate(self.index_q):
             xq_ft_[:, :, :, i] = xq_ft[:, :, :, j]
         xk_ft_ = torch.zeros(B, H, E, len(self.index_kv), device=xq.device, dtype=torch.cfloat)
-        xk_ft = torch.fft.rfft(xk, dim=-1)
+        xk_ft = torch.fft.rfft(xk.float(), dim=-1)
         for i, j in enumerate(self.index_kv):
             xk_ft_[:, :, :, i] = xk_ft[:, :, :, j]
 
@@ -121,7 +121,10 @@ class FourierCrossAttention(nn.Module):
         for i, j in enumerate(self.index_q):
             out_ft[:, :, :, j] = xqkvw[:, :, :, i]
         # Return to time domain
-        out = torch.fft.irfft(out_ft / self.in_channels / self.out_channels, n=xq.size(-1))
+        out = torch.fft.irfft(
+            out_ft / self.in_channels / self.out_channels,
+            n=xq.size(-1),
+        ).to(dtype=q.dtype)
         return (out, None)
     
 

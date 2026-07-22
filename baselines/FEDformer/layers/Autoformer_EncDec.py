@@ -78,7 +78,7 @@ class FourierDecomp(nn.Module):
         pass
 
     def forward(self, x):
-        x_ft = torch.fft.rfft(x, dim=-1)
+        x_ft = torch.fft.rfft(x.float(), dim=-1)
 
 
 class EncoderLayer(nn.Module):

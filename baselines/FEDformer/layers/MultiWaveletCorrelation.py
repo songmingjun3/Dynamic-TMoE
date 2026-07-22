@@ -231,12 +231,12 @@ class FourierCrossAttentionW(nn.Module):
 
         # Compute Fourier coefficients
         xq_ft_ = torch.zeros(B, H, E, len(self.index_q), device=xq.device, dtype=torch.cfloat)
-        xq_ft = torch.fft.rfft(xq, dim=-1)
+        xq_ft = torch.fft.rfft(xq.float(), dim=-1)
         for i, j in enumerate(self.index_q):
             xq_ft_[:, :, :, i] = xq_ft[:, :, :, j]
 
         xk_ft_ = torch.zeros(B, H, E, len(self.index_k_v), device=xq.device, dtype=torch.cfloat)
-        xk_ft = torch.fft.rfft(xk, dim=-1)
+        xk_ft = torch.fft.rfft(xk.float(), dim=-1)
         for i, j in enumerate(self.index_k_v):
             xk_ft_[:, :, :, i] = xk_ft[:, :, :, j]
         xqk_ft = (torch.einsum("bhex,bhey->bhxy", xq_ft_, xk_ft_))
@@ -254,7 +254,10 @@ class FourierCrossAttentionW(nn.Module):
         for i, j in enumerate(self.index_q):
             out_ft[:, :, :, j] = xqkvw[:, :, :, i]
 
-        out = torch.fft.irfft(out_ft / self.in_channels / self.out_channels, n=xq.size(-1)).permute(0, 3, 2, 1)
+        out = torch.fft.irfft(
+            out_ft / self.in_channels / self.out_channels,
+            n=xq.size(-1),
+        ).to(dtype=q.dtype).permute(0, 3, 2, 1)
         # size = [B, L, H, E]
         return (out, None)
 
@@ -279,16 +282,17 @@ class sparseKernelFT1d(nn.Module):
 
     def forward(self, x):
         B, N, c, k = x.shape  # (B, N, c, k)
+        input_dtype = x.dtype
 
         x = x.view(B, N, -1)
         x = x.permute(0, 2, 1)
-        x_fft = torch.fft.rfft(x)
+        x_fft = torch.fft.rfft(x.float())
         # Multiply relevant Fourier modes
         l = min(self.modes1, N // 2 + 1)
         # l = N//2+1
         out_ft = torch.zeros(B, c * k, N // 2 + 1, device=x.device, dtype=torch.cfloat)
         out_ft[:, :, :l] = self.compl_mul1d(x_fft[:, :, :l], self.weights1[:, :, :l])
-        x = torch.fft.irfft(out_ft, n=N)
+        x = torch.fft.irfft(out_ft, n=N).to(dtype=input_dtype)
         x = x.permute(0, 2, 1).view(B, N, c, k)
         return x
 
