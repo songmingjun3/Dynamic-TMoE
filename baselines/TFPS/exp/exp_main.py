@@ -2,6 +2,7 @@ from data_provider.data_factory import data_provider
 from exp.exp_basic import Exp_Basic
 from models import Informer, Autoformer, Transformer, DLinear, Linear, NLinear, PatchTST, PatchTST_MoE_cluster
 from utils.tools import EarlyStopping, adjust_learning_rate, visual, test_params_flop
+from utils.model_output import unpack_model_output
 from utils.metrics import metric
 
 import numpy as np
@@ -88,7 +89,9 @@ class Exp_Main(Exp_Basic):
                 if self.args.use_amp:
                     with torch.cuda.amp.autocast():
                         if 'Linear' in self.args.model or 'TST' in self.args.model:
-                            outputs = self.model(batch_x)
+                            s_time, s_frequency, outputs = unpack_model_output(
+                                self.model(batch_x)
+                            )
                         else:
                             if self.args.output_attention:
                                 outputs = self.model(batch_x, batch_x_mark, dec_inp, batch_y_mark)[0]
@@ -96,7 +99,9 @@ class Exp_Main(Exp_Basic):
                                 outputs = self.model(batch_x, batch_x_mark, dec_inp, batch_y_mark)
                 else:
                     if 'Linear' in self.args.model or 'TST' in self.args.model:
-                        s_time, s_frequency, outputs = self.model(batch_x)
+                        s_time, s_frequency, outputs = unpack_model_output(
+                            self.model(batch_x)
+                        )
                     else:
                         if self.args.output_attention:
                             outputs = self.model(batch_x, batch_x_mark, dec_inp, batch_y_mark)[0]
@@ -188,21 +193,55 @@ class Exp_Main(Exp_Basic):
                 if self.args.use_amp:
                     with torch.cuda.amp.autocast():
                         if 'Linear' in self.args.model or 'TST' in self.args.model:
-                            outputs = self.model(batch_x)
+                            s_time, s_frequency, outputs = unpack_model_output(
+                                self.model(batch_x)
+                            )
                         else:
                             if self.args.output_attention:
                                 outputs = self.model(batch_x, batch_x_mark, dec_inp, batch_y_mark)[0]
                             else:
                                 outputs = self.model(batch_x, batch_x_mark, dec_inp, batch_y_mark)
 
+                        # Preserve the TFPS clustering objective under AMP;
+                        # the model returns both affinities and the forecast.
+                        tmp_s_time = s_time.data
+                        s_tilde_time = self._refined_subspace_affinity(s=tmp_s_time)
+                        tmp_s_frequency = s_frequency.data
+                        s_tilde_frequency = self._refined_subspace_affinity(s=tmp_s_frequency)
+
+                        n_z = self.args.c_out * self.args.d_model
+                        T_dim = int(n_z / self.args.T_num_expert)
+                        F_dim = int(n_z / self.args.F_num_expert)
+                        loss_cluster_time = self.model.model_time.cluster.total_loss(
+                            pred=s_time,
+                            target=s_tilde_time,
+                            dim=T_dim,
+                            n_clusters=self.args.T_num_expert,
+                            beta=self.args.beta,
+                        )
+                        loss_cluster_frequency = self.model.model_frequency.cluster.total_loss(
+                            pred=s_frequency,
+                            target=s_tilde_frequency,
+                            dim=F_dim,
+                            n_clusters=self.args.F_num_expert,
+                            beta=self.args.beta,
+                        )
+
                         f_dim = -1 if self.args.features == 'MS' else 0
                         outputs = outputs[:, -self.args.pred_len:, f_dim:]
                         batch_y = batch_y[:, -self.args.pred_len:, f_dim:].to(self.device)
-                        loss = criterion(outputs, batch_y)
+                        loss_fore = criterion(outputs, batch_y)
+                        loss = (
+                            loss_fore
+                            + self.args.alpha * loss_cluster_time
+                            + self.args.gama * loss_cluster_frequency
+                        )
                         train_loss.append(loss.item())
                 else:
                     if 'Linear' in self.args.model or 'TST' in self.args.model:
-                            s_time, s_frequency, outputs = self.model(batch_x)
+                            s_time, s_frequency, outputs = unpack_model_output(
+                                self.model(batch_x)
+                            )
                     else:
                         if self.args.output_attention:
                             outputs = self.model(batch_x, batch_x_mark, dec_inp, batch_y_mark)[0]
@@ -367,7 +406,9 @@ class Exp_Main(Exp_Basic):
                 if self.args.use_amp:
                     with torch.cuda.amp.autocast():
                         if 'Linear' in self.args.model or 'TST' in self.args.model:
-                            outputs = self.model(batch_x)
+                            s_time, s_frequency, outputs = unpack_model_output(
+                                self.model(batch_x)
+                            )
                         else:
                             if self.args.output_attention:
                                 outputs = self.model(batch_x, batch_x_mark, dec_inp, batch_y_mark)[0]
@@ -375,7 +416,9 @@ class Exp_Main(Exp_Basic):
                                 outputs = self.model(batch_x, batch_x_mark, dec_inp, batch_y_mark)
                 else:
                     if 'Linear' in self.args.model or 'TST' in self.args.model:
-                            s_time, s_frequency, outputs = self.model(batch_x)
+                            s_time, s_frequency, outputs = unpack_model_output(
+                                self.model(batch_x)
+                            )
                     else:
                         if self.args.output_attention:
                             outputs = self.model(batch_x, batch_x_mark, dec_inp, batch_y_mark)[0]
@@ -533,7 +576,9 @@ class Exp_Main(Exp_Basic):
                 if self.args.use_amp:
                     with torch.cuda.amp.autocast():
                         if 'Linear' in self.args.model or 'TST' in self.args.model:
-                            outputs = self.model(batch_x)
+                            _, _, outputs = unpack_model_output(
+                                self.model(batch_x)
+                            )
                         else:
                             if self.args.output_attention:
                                 outputs = self.model(batch_x, batch_x_mark, dec_inp, batch_y_mark)[0]
@@ -541,7 +586,9 @@ class Exp_Main(Exp_Basic):
                                 outputs = self.model(batch_x, batch_x_mark, dec_inp, batch_y_mark)
                 else:
                     if 'Linear' in self.args.model or 'TST' in self.args.model:
-                        outputs = self.model(batch_x)
+                        _, _, outputs = unpack_model_output(
+                            self.model(batch_x)
+                        )
                     else:
                         if self.args.output_attention:
                             outputs = self.model(batch_x, batch_x_mark, dec_inp, batch_y_mark)[0]
