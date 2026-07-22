@@ -74,6 +74,21 @@ def test_ili_command_uses_short_sequence_and_label_lengths(tmp_path):
     assert option(process.argv, "--label_len") == "18"
 
 
+def test_timemixer_exchange_uses_custom_eight_channel_dataset(tmp_path):
+    layout = make_layout(tmp_path, "Exchange")
+
+    process = build_processes(
+        get_task("TimeMixer", "Exchange"), 336, layout
+    )[0]
+
+    assert option(process.argv, "--data") == "custom"
+    assert option(process.argv, "--data_path") == "exchange_rate.csv"
+    assert option(process.argv, "--enc_in") == "8"
+    assert option(process.argv, "--dec_in") == "8"
+    assert option(process.argv, "--c_out") == "8"
+    assert option(process.argv, "--pred_len") == "336"
+
+
 def test_stmtm_builds_pretrain_then_finetune_with_shared_pretrain_directory(tmp_path):
     layout = make_layout(tmp_path, "Weather")
 

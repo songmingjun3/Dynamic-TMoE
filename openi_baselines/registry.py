@@ -42,6 +42,7 @@ MODEL_DEFINITIONS = {
             "ETTm1",
             "ETTm2",
             "Electricity",
+            "Exchange",
             "Traffic",
             "Weather",
         ),

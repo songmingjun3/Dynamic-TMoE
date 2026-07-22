@@ -15,8 +15,8 @@ from openi_baselines.registry import (
 def test_registry_contains_expected_supported_matrix():
     tasks = {(task.model, task.dataset) for task in iter_tasks()}
 
-    assert len(tasks) == 79
-    assert ("TimeMixer", "Exchange") not in tasks
+    assert len(tasks) == 80
+    assert ("TimeMixer", "Exchange") in tasks
     assert ("TimeMixer", "ILI") not in tasks
     assert ("DLinear", "Exchange") in tasks
     assert ("ST-MTM", "Weather") in tasks
@@ -50,9 +50,10 @@ def test_duplicate_prediction_lengths_are_removed_in_request_order():
     assert parse_pred_lengths(task, "336,96,336") == (336, 96)
 
 
-def test_unsupported_model_dataset_pair_reports_supported_datasets():
-    with pytest.raises(UnsupportedTaskError, match="TimeMixer.*Exchange"):
-        get_task("TimeMixer", "Exchange")
+def test_timemixer_exchange_uses_standard_long_horizons():
+    task = get_task("TimeMixer", "Exchange")
+
+    assert task.horizons == (96, 192, 336, 720)
 
 
 def test_invalid_prediction_length_reports_allowed_values():

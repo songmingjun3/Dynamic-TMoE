@@ -366,6 +366,7 @@ def _timemixer(task: TaskSpec, pred_len: int, layout: CommandLayout) -> ProcessS
         pred_len=pred_len,
         e_layers=2,
         enc_in=profile["channels"],
+        dec_in=profile["channels"],
         c_out=profile["channels"],
         des="Exp",
         itr=1,

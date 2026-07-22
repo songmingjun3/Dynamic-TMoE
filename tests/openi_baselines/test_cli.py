@@ -37,7 +37,7 @@ def test_cli_local_dry_run_accepts_single_prediction_length(tmp_path, capsys):
     assert output["statuses"] == {"96": "planned"}
 
 
-def test_cli_returns_validation_error_for_unsupported_pair(tmp_path, capsys):
+def test_cli_accepts_timemixer_exchange(tmp_path, capsys):
     exit_code = main(
         [
             "--local",
@@ -55,8 +55,13 @@ def test_cli_returns_validation_error_for_unsupported_pair(tmp_path, capsys):
         ]
     )
 
-    assert exit_code == 2
-    assert "does not support Exchange" in capsys.readouterr().err
+    output = json.loads(capsys.readouterr().out)
+    command = output["commands"]["96"][0]
+    assert exit_code == 0
+    assert native_option(command, "--data") == "custom"
+    assert native_option(command, "--enc_in") == "8"
+    assert native_option(command, "--dec_in") == "8"
+    assert native_option(command, "--c_out") == "8"
 
 
 def test_cli_accepts_per_horizon_batch_sizes(tmp_path, capsys):
