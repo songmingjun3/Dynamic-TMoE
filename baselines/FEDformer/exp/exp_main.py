@@ -9,6 +9,7 @@ from data_provider.data_factory import data_provider
 from exp.exp_basic import Exp_Basic
 from models import FEDformer, Autoformer, Informer, Transformer
 from utils.tools import EarlyStopping, adjust_learning_rate, visual
+from utils.amp import build_grad_scaler
 from utils.metrics import metric
 
 
@@ -101,7 +102,7 @@ class Exp_Main(Exp_Basic):
         criterion = self._select_criterion()
 
         if self.args.use_amp:
-            scaler = torch.cuda.amp.GradScaler()
+            scaler = build_grad_scaler(self.model)
 
         for epoch in range(self.args.train_epochs):
             iter_count = 0
