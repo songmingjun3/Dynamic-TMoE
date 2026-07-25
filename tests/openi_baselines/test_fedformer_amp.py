@@ -27,3 +27,27 @@ assert attention is None
         check=False,
     )
     assert result.returncode == 0, result.stderr
+
+
+def test_complex_tanh_surrogate_is_bounded_and_has_finite_gradients():
+    script = f"""
+import sys
+import torch
+sys.path.insert(0, {str(FEDFORMER_ROOT)!r})
+from layers.FourierCorrelation import stable_complex_tanh
+value = torch.tensor([complex(1000.0, 1.5707963), complex(-1000.0, -1.5707963)], requires_grad=True)
+output = stable_complex_tanh(value)
+assert torch.isfinite(output).all()
+assert output.real.abs().max() <= 1
+assert output.imag.abs().max() <= 1
+output.abs().square().sum().backward()
+assert torch.isfinite(value.grad).all()
+"""
+    result = subprocess.run(
+        [sys.executable, "-c", script],
+        capture_output=True,
+        text=True,
+        timeout=30,
+        check=False,
+    )
+    assert result.returncode == 0, result.stderr

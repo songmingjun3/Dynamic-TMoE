@@ -24,6 +24,18 @@ def get_frequency_modes(seq_len, modes=64, mode_select_method='random'):
     return index
 
 
+def stable_complex_tanh(value):
+    """Bound complex attention coefficients without complex-tanh poles.
+
+    ``torch.tanh`` on a complex value is not bounded: it has poles on the
+    imaginary axis.  Fourier cross attention can reach those poles after a
+    parameter update, which turns both the forward result and its gradient
+    into NaN.  Applying the real tanh independently to real and imaginary
+    components keeps each component in [-1, 1] and has finite derivatives.
+    """
+    return torch.complex(torch.tanh(value.real), torch.tanh(value.imag))
+
+
 # ########## fourier layer #############
 class FourierBlock(nn.Module):
     def __init__(self, in_channels, out_channels, seq_len, modes=0, mode_select_method='random'):
@@ -107,9 +119,13 @@ class FourierCrossAttention(nn.Module):
             xk_ft_[:, :, :, i] = xk_ft[:, :, :, j]
 
         # perform attention mechanism on frequency domain
-        xqk_ft = (torch.einsum("bhex,bhey->bhxy", xq_ft_, xk_ft_))
+        # This is a dot-product attention score over E channels.  Without the
+        # Transformer-style sqrt(E) scaling, its variance grows with E and can
+        # drive the complex activation into a numerical singularity.
+        xqk_ft = torch.einsum("bhex,bhey->bhxy", xq_ft_, xk_ft_)
+        xqk_ft = xqk_ft / max(E, 1) ** 0.5
         if self.activation == 'tanh':
-            xqk_ft = xqk_ft.tanh()
+            xqk_ft = stable_complex_tanh(xqk_ft)
         elif self.activation == 'softmax':
             xqk_ft = torch.softmax(abs(xqk_ft), dim=-1)
             xqk_ft = torch.complex(xqk_ft, torch.zeros_like(xqk_ft))

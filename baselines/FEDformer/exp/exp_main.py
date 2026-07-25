@@ -16,6 +16,18 @@ from utils.metrics import metric
 warnings.filterwarnings('ignore')
 
 
+def _all_finite(tensors):
+    """Return whether every non-None tensor contains only finite values."""
+    return all(tensor is None or torch.isfinite(tensor).all().item() for tensor in tensors)
+
+
+def _restore_best_checkpoint(model, checkpoint_path):
+    if not os.path.exists(checkpoint_path):
+        return False
+    model.load_state_dict(torch.load(checkpoint_path, map_location='cpu'))
+    return True
+
+
 class Exp_Main(Exp_Basic):
     def __init__(self, args):
         super(Exp_Main, self).__init__(args)
@@ -104,6 +116,9 @@ class Exp_Main(Exp_Basic):
         if self.args.use_amp:
             scaler = build_grad_scaler(self.model)
 
+        stopped_for_non_finite = False
+        non_finite_location = None
+
         for epoch in range(self.args.train_epochs):
             iter_count = 0
             train_loss = []
@@ -147,6 +162,11 @@ class Exp_Main(Exp_Basic):
                     loss = criterion(outputs, batch_y)
                     train_loss.append(loss.item())
 
+                if not _all_finite((outputs, loss)):
+                    stopped_for_non_finite = True
+                    non_finite_location = f"forward/loss at epoch {epoch + 1}, step {i + 1}"
+                    break
+
                 if (i + 1) % 100 == 0:
                     # print("\titers: {0}, epoch: {1} | loss: {2:.7f}".format(i + 1, epoch + 1, loss.item()))
                     speed = (time.time() - time_now) / iter_count
@@ -157,35 +177,54 @@ class Exp_Main(Exp_Basic):
 
                 if self.args.use_amp:
                     scaler.scale(loss).backward()
-                    # Gradient clipping to prevent gradient explosion
                     scaler.unscale_(model_optim)
+                    if not _all_finite(parameter.grad for parameter in self.model.parameters()):
+                        stopped_for_non_finite = True
+                        non_finite_location = f"gradient at epoch {epoch + 1}, step {i + 1}"
+                        break
+                    # Gradient clipping to prevent gradient explosion
                     torch.nn.utils.clip_grad_norm_(self.model.parameters(), max_norm=1.0)
                     scaler.step(model_optim)
                     scaler.update()
                 else:
                     loss.backward()
+                    if not _all_finite(parameter.grad for parameter in self.model.parameters()):
+                        stopped_for_non_finite = True
+                        non_finite_location = f"gradient at epoch {epoch + 1}, step {i + 1}"
+                        break
                     # Gradient clipping to prevent gradient explosion
                     torch.nn.utils.clip_grad_norm_(self.model.parameters(), max_norm=1.0)
                     model_optim.step()
+
+                if not _all_finite(parameter.data for parameter in self.model.parameters()):
+                    stopped_for_non_finite = True
+                    non_finite_location = f"optimizer update at epoch {epoch + 1}, step {i + 1}"
+                    break
+
+            if stopped_for_non_finite:
+                print(f"WARNING: Non-finite value detected in {non_finite_location}. Stopping training.")
+                break
 
             print("Epoch: {} cost time: {}".format(epoch + 1, time.time() - epoch_time))
             train_loss = np.average(train_loss)
             
             # Check for NaN in training loss
-            if np.isnan(train_loss):
+            if not np.isfinite(train_loss):
                 print("WARNING: NaN detected in training loss! Stopping training.")
                 print("This usually indicates gradient explosion or numerical instability.")
                 print("Suggestions: 1) Reduce learning rate, 2) Check data for anomalies, 3) Use gradient clipping")
-                return self.model  # Return without loading checkpoint
+                stopped_for_non_finite = True
+                break
             
             vali_loss = self.vali(vali_data, vali_loader, criterion)
             test_loss = self.vali(test_data, test_loader, criterion)
             
             # Check for NaN in validation/test loss
-            if np.isnan(vali_loss) or np.isnan(test_loss):
+            if not np.isfinite(vali_loss) or not np.isfinite(test_loss):
                 print("WARNING: NaN detected in validation/test loss! Stopping training.")
                 print("Suggestions: 1) Reduce learning rate, 2) Check data for anomalies, 3) Use gradient clipping")
-                return self.model  # Return without loading checkpoint
+                stopped_for_non_finite = True
+                break
 
             print("Epoch: {0}, Steps: {1} | Train Loss: {2:.7f} Vali Loss: {3:.7f} Test Loss: {4:.7f}".format(
                 epoch + 1, train_steps, train_loss, vali_loss, test_loss))
@@ -197,8 +236,9 @@ class Exp_Main(Exp_Basic):
             adjust_learning_rate(model_optim, epoch + 1, self.args)
 
         best_model_path = path + '/' + 'checkpoint.pth'
-        if os.path.exists(best_model_path):
-            self.model.load_state_dict(torch.load(best_model_path))
+        if _restore_best_checkpoint(self.model, best_model_path):
+            if stopped_for_non_finite:
+                print("Loaded the best finite checkpoint after numerical instability.")
         else:
             print(f"Warning: No checkpoint found at {best_model_path}")
 
