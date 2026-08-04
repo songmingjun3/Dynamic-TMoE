@@ -41,6 +41,27 @@ def test_dlinear_command_uses_mounted_data_gpu_zero_and_requested_horizon(tmp_pa
     assert option(process.argv, "--checkpoints") == "./checkpoints"
 
 
+def test_dynamic_tmoe_command_uses_root_entrypoint_and_fair_p0_settings(tmp_path):
+    layout = make_layout(tmp_path, "ETTh1")
+
+    process = build_processes(
+        get_task("Dynamic_TMoE", "ETTh1"), 336, layout
+    )[0]
+
+    assert Path(process.argv[2]) == REPO_ROOT / "run.py"
+    assert option(process.argv, "--task_name") == "long_term_forecast"
+    assert option(process.argv, "--model") == "Dynamic_TMoE"
+    assert option(process.argv, "--seq_len") == "96"
+    assert option(process.argv, "--label_len") == "48"
+    assert option(process.argv, "--pred_len") == "336"
+    assert option(process.argv, "--seed") == "2021"
+    assert option(process.argv, "--train_sample_limit") == "0"
+    assert option(process.argv, "--channel_independence") == "0"
+    assert option(process.argv, "--use_relation_layer") == "1"
+    assert option(process.argv, "--enable_drift_detection") == "1"
+    assert process.cwd == layout.task_output / "native_work" / "train"
+
+
 @pytest.mark.parametrize(
     ("model", "expected_native_model"),
     [
@@ -72,6 +93,23 @@ def test_ili_command_uses_short_sequence_and_label_lengths(tmp_path):
 
     assert option(process.argv, "--seq_len") == "36"
     assert option(process.argv, "--label_len") == "18"
+
+
+def test_timemixer_ili_uses_short_sequence_and_label_lengths(tmp_path):
+    layout = make_layout(tmp_path, "ILI")
+
+    process = build_processes(
+        get_task("TimeMixer", "ILI"), 60, layout
+    )[0]
+
+    assert Path(process.argv[2]) == REPO_ROOT / "baselines" / "TimeMixer" / "run.py"
+    assert option(process.argv, "--data") == "custom"
+    assert option(process.argv, "--data_path") == "national_illness.csv"
+    assert option(process.argv, "--seq_len") == "36"
+    assert option(process.argv, "--label_len") == "18"
+    assert option(process.argv, "--pred_len") == "60"
+    assert option(process.argv, "--enc_in") == "7"
+    assert process.cwd == layout.task_output / "native_work" / "train"
 
 
 def test_timemixer_exchange_uses_custom_eight_channel_dataset(tmp_path):

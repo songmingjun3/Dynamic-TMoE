@@ -1,6 +1,8 @@
 import json
 from pathlib import Path
 
+import pytest
+
 from train_openi import main
 
 
@@ -337,7 +339,7 @@ def test_cli_dry_run_executes_model_dataset_cartesian_product(
     )
 
 
-def test_cli_preflight_rejects_unsupported_pair_without_running_any_task(
+def test_cli_preflight_rejects_unsupported_dataset_without_running_any_task(
     tmp_path, capsys
 ):
     exit_code = main(
@@ -352,11 +354,43 @@ def test_cli_preflight_rejects_unsupported_pair_without_running_any_task(
             "--model",
             "DLinear,TimeMixer",
             "--dataset",
-            "ETTh1,ILI",
+            "ETTh1,Unknown",
             "--dry-run",
         ]
     )
 
     assert exit_code == 2
-    assert "TimeMixer does not support ILI" in capsys.readouterr().err
+    assert "Unsupported dataset" in capsys.readouterr().err
     assert not (tmp_path / "DLinear").exists()
+
+
+def test_cli_uploads_platform_output_even_when_execution_raises(
+    monkeypatch, tmp_path
+):
+    uploads = []
+
+    class Context:
+        code_path = REPO_ROOT
+        dataset_path = REPO_ROOT / "dataset"
+        output_path = tmp_path / "output"
+
+        def upload_output(self):
+            uploads.append(self.output_path)
+
+    monkeypatch.setattr(
+        "train_openi.prepare_platform", lambda **kwargs: Context()
+    )
+    monkeypatch.setattr("train_openi.resolve_repo", lambda path: REPO_ROOT)
+    monkeypatch.setattr(
+        "train_openi.resolve_dataset_file", lambda root, dataset: object()
+    )
+
+    def fail_execution(*args, **kwargs):
+        raise RuntimeError("simulated execution failure")
+
+    monkeypatch.setattr("train_openi.execute_matrix", fail_execution)
+
+    with pytest.raises(RuntimeError, match="simulated execution failure"):
+        main(["--model", "DLinear", "--dataset", "ETTh1"])
+
+    assert uploads == [tmp_path / "output"]

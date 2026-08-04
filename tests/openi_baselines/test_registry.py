@@ -15,9 +15,13 @@ from openi_baselines.registry import (
 def test_registry_contains_expected_supported_matrix():
     tasks = {(task.model, task.dataset) for task in iter_tasks()}
 
-    assert len(tasks) == 80
+    assert len(tasks) == 90
+    assert all(("Dynamic_TMoE", dataset) in tasks for dataset in {
+        "ETTh1", "ETTh2", "ETTm1", "ETTm2", "Electricity", "Exchange",
+        "ILI", "Traffic", "Weather",
+    })
     assert ("TimeMixer", "Exchange") in tasks
-    assert ("TimeMixer", "ILI") not in tasks
+    assert ("TimeMixer", "ILI") in tasks
     assert ("DLinear", "Exchange") in tasks
     assert ("ST-MTM", "Weather") in tasks
 
@@ -54,6 +58,12 @@ def test_timemixer_exchange_uses_standard_long_horizons():
     task = get_task("TimeMixer", "Exchange")
 
     assert task.horizons == (96, 192, 336, 720)
+
+
+def test_dynamic_tmoe_uses_standard_long_horizons():
+    assert get_task("Dynamic_TMoE", "Weather").horizons == (
+        96, 192, 336, 720
+    )
 
 
 def test_invalid_prediction_length_reports_allowed_values():
@@ -116,8 +126,8 @@ def test_task_matrix_uses_model_major_cartesian_order():
 
 
 def test_task_matrix_rejects_any_unsupported_pair():
-    with pytest.raises(UnsupportedTaskError, match="TimeMixer.*ILI"):
-        parse_task_matrix("DLinear,TimeMixer", "ETTh1,ILI")
+    with pytest.raises(UnsupportedTaskError, match="Unsupported dataset"):
+        parse_task_matrix("DLinear,TimeMixer", "ETTh1,Unknown")
 
 
 @pytest.mark.parametrize(

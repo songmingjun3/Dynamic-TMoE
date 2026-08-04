@@ -2,9 +2,9 @@
 
 ## 支持范围
 
-统一入口 `train_openi.py` 支持 DLinear、FEDformer、FITS、PatchTST、RAFT、ST-MTM、TFPS、TimeMixer 和 TimesNet。
+统一入口 `train_openi.py` 支持 Dynamic TMoE、DLinear、FEDformer、FITS、PatchTST、RAFT、ST-MTM、TFPS、TimeMixer 和 TimesNet。
 
-DLinear、FEDformer、FITS、PatchTST、RAFT、ST-MTM、TFPS 和 TimesNet 支持 ETTh1、ETTh2、ETTm1、ETTm2、Electricity、Exchange、ILI、Traffic 和 Weather。TimeMixer 支持 ETTh1、ETTh2、ETTm1、ETTm2、Electricity、Exchange、Traffic 和 Weather；Exchange 使用通用 `Dataset_Custom` 数据加载器和 8 通道配置。TimeMixer 暂不支持 ILI。
+上述模型均支持 ETTh1、ETTh2、ETTm1、ETTm2、Electricity、Exchange、ILI、Traffic 和 Weather。TimeMixer 的 Exchange 使用通用 `Dataset_Custom` 数据加载器和 8 通道配置，ILI 使用 `36/18` 的输入/标签长度。
 
 常规数据集的标准预测长度为 `96,192,336,720`，ILI 为 `24,36,48,60`。ST-MTM 自动依次运行预训练和微调。
 

@@ -16,19 +16,20 @@ def test_generator_creates_all_and_per_horizon_scripts(tmp_path):
 def test_generator_emits_expected_script_count(tmp_path):
     generate_scripts(tmp_path)
 
-    assert len(list(tmp_path.rglob("*.sh"))) == 400
-    assert len(expected_scripts()) == 400
+    assert len(list(tmp_path.rglob("*.sh"))) == 450
+    assert len(expected_scripts()) == 450
 
 
-def test_generator_includes_timemixer_exchange_but_omits_ili(tmp_path):
+def test_generator_includes_dynamic_tmoe_and_timemixer_ili(tmp_path):
     generate_scripts(tmp_path)
 
     assert (tmp_path / "TimeMixer" / "Exchange" / "all.sh").is_file()
     assert (
         tmp_path / "TimeMixer" / "Exchange" / "pred_720.sh"
     ).is_file()
-    assert not (tmp_path / "TimeMixer" / "ILI").exists()
+    assert (tmp_path / "TimeMixer" / "ILI" / "pred_60.sh").is_file()
     assert (tmp_path / "TimeMixer" / "Weather" / "pred_720.sh").is_file()
+    assert (tmp_path / "Dynamic_TMoE" / "ETTh1" / "pred_336.sh").is_file()
 
 
 def test_generated_script_resolves_repo_and_delegates_to_shared_cli(tmp_path):
