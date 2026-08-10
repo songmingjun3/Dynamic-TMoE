@@ -135,28 +135,58 @@ DYNAMICTMOE_P0 = {
 
 def _dynamic_tmoe(task: TaskSpec, pred_len: int, layout: CommandLayout) -> ProcessSpec:
     profile, argv = _common(task, pred_len, layout)
-    is_ett = task.dataset.startswith("ETT")
-    _extend(
-        argv,
-        root_path=layout.data.root_path,
-        data_path=layout.data.file.name,
-        model_id=f"{profile['id']}_{profile['seq']}_{pred_len}_s2021",
-        model=task.native_model,
-        data=profile["data"],
-        seq_len=profile["seq"],
-        label_len=profile["label"],
-        pred_len=pred_len,
-        enc_in=profile["channels"],
-        dec_in=profile["channels"],
-        c_out=profile["channels"],
-        patch_len=48 if is_ett else 24,
-        stride=12 if is_ett else 6,
-        batch_size=2 if task.dataset == "Electricity" else 32,
-        drift_window_size=(
-            2400 if task.dataset in {"Electricity", "Traffic"} else 5760
-        ),
-        **DYNAMICTMOE_P0,
-    )
+    if task.strict_config is not None:
+        strict_options = dict(DYNAMICTMOE_P0)
+        strict_options.update(task.parameters)
+        strict_options.update(task.horizon_overrides.get(pred_len, {}))
+        use_amp = strict_options.pop("use_amp", None)
+        strict_options.pop("matrix_id", None)
+        strict_options.pop("schema", None)
+        strict_options["des"] = strict_options.get("des", "Exp")
+        strict_options["model_id"] = (
+            f"{profile['id']}_{profile['seq']}_{pred_len}_s2021_"
+            f"{task.strict_config}"
+        )
+        base_options = {
+            "root_path": layout.data.root_path,
+            "data_path": layout.data.file.name,
+            "model": task.native_model,
+            "data": profile["data"],
+            "seq_len": profile["seq"],
+            "label_len": profile["label"],
+            "pred_len": pred_len,
+            "enc_in": profile["channels"],
+            "dec_in": profile["channels"],
+            "c_out": profile["channels"],
+        }
+        _extend(argv, **base_options, **strict_options)
+        if use_amp is True:
+            argv.append("--use_amp")
+        elif use_amp not in (None, False):
+            raise ValueError("Strict use_amp must be a boolean")
+    else:
+        is_ett = task.dataset.startswith("ETT")
+        _extend(
+            argv,
+            root_path=layout.data.root_path,
+            data_path=layout.data.file.name,
+            model_id=f"{profile['id']}_{profile['seq']}_{pred_len}_s2021",
+            model=task.native_model,
+            data=profile["data"],
+            seq_len=profile["seq"],
+            label_len=profile["label"],
+            pred_len=pred_len,
+            enc_in=profile["channels"],
+            dec_in=profile["channels"],
+            c_out=profile["channels"],
+            patch_len=48 if is_ett else 24,
+            stride=12 if is_ett else 6,
+            batch_size=2 if task.dataset == "Electricity" else 32,
+            drift_window_size=(
+                2400 if task.dataset in {"Electricity", "Traffic"} else 5760
+            ),
+            **DYNAMICTMOE_P0,
+        )
     return _base_process(task, layout, stage="train", argv=argv)
 
 

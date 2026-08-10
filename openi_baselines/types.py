@@ -18,6 +18,7 @@ class TaskSpec:
     parameters: Mapping[str, object] = field(default_factory=dict)
     horizon_overrides: Mapping[int, Mapping[str, object]] = field(default_factory=dict)
     stages: tuple[str, ...] = ("train",)
+    strict_config: str | None = None
 
 
 @dataclass(frozen=True)
