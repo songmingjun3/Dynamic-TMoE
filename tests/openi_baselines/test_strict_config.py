@@ -1,3 +1,5 @@
+import copy
+import json
 from pathlib import Path
 
 from openi_baselines.commands import CommandLayout, build_processes
@@ -8,6 +10,12 @@ from openi_baselines.strict_config import apply_strict_config
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 CONFIG = REPO_ROOT / "configs" / "openi_paper_strict_v1" / "matrix.json"
+FIX_CONFIG = (
+    REPO_ROOT
+    / "configs"
+    / "openi_paper_strict_v1"
+    / "matrix_traffic_oom_fix.json"
+)
 
 
 def option(argv, name):
@@ -15,9 +23,9 @@ def option(argv, name):
     return argv[index + 1]
 
 
-def strict_task(dataset):
+def strict_task(dataset, config=CONFIG):
     return apply_strict_config(
-        parse_task_matrix("Dynamic_TMoE", dataset), CONFIG
+        parse_task_matrix("Dynamic_TMoE", dataset), config
     )[0]
 
 
@@ -69,11 +77,41 @@ def test_strict_ili_36_emits_short_context_and_ili_overrides(tmp_path):
 
 
 def test_strict_config_covers_all_table7_tasks():
-    tasks = apply_strict_config(
-        parse_task_matrix(
-            "Dynamic_TMoE",
-            "ETTh1,ETTh2,ETTm1,ETTm2,Traffic,Electricity,Weather,ILI,Exchange",
-        ),
-        CONFIG,
+    raw_tasks = parse_task_matrix(
+        "Dynamic_TMoE",
+        "ETTh1,ETTh2,ETTm1,ETTm2,Traffic,Electricity,Weather,ILI,Exchange",
     )
-    assert sum(len(task.horizon_overrides) for task in tasks) == 36
+    for config, matrix_id in (
+        (CONFIG, "paper_strict_v1"),
+        (FIX_CONFIG, "paper_strict_v1_traffic_oom_fix"),
+    ):
+        tasks = apply_strict_config(raw_tasks, config)
+        assert len(tasks) == 9
+        assert sum(len(task.horizon_overrides) for task in tasks) == 36
+        assert {task.strict_config for task in tasks} == {matrix_id}
+
+
+def test_traffic_oom_fix_emits_reduced_batch_and_matrix_id(tmp_path):
+    task = strict_task("Traffic", FIX_CONFIG)
+    process = build_processes(
+        task, 96, make_layout(tmp_path, "Traffic")
+    )[0]
+
+    assert task.strict_config == "paper_strict_v1_traffic_oom_fix"
+    assert option(process.argv, "--batch_size") == "8"
+
+
+def test_traffic_oom_fix_differs_only_in_traffic_batch_size():
+    original = json.loads(CONFIG.read_text(encoding="utf-8"))
+    fixed = json.loads(FIX_CONFIG.read_text(encoding="utf-8"))
+    expected = copy.deepcopy(original)
+    expected["matrix_id"] = "paper_strict_v1_traffic_oom_fix"
+
+    for horizon in ("96", "192", "336", "720"):
+        assert (
+            original["datasets"]["Traffic"]["horizons"][horizon]["batch_size"]
+            == 32
+        )
+        expected["datasets"]["Traffic"]["horizons"][horizon]["batch_size"] = 8
+
+    assert fixed == expected

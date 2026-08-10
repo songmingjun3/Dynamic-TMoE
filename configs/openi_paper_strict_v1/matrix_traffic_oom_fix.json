@@ -1,0 +1,164 @@
+{
+  "schema": 1,
+  "matrix_id": "paper_strict_v1_traffic_oom_fix",
+  "model": "Dynamic_TMoE",
+  "protocol": {
+    "hardware_label": "paper_config_on_V100",
+    "optimizer": "AdamW",
+    "loss": "MSE",
+    "metrics": ["MSE", "MAE"],
+    "top_k": 3,
+    "lambda_mmd": 3.0,
+    "patience": 10,
+    "seed": 2021,
+    "use_amp": false,
+    "lookback": {"default": 96, "ILI": 36},
+    "label_len": {"default": 48, "ILI": 18}
+  },
+  "datasets": {
+    "ETTh1": {
+      "common": {
+        "task_name": "long_term_forecast", "is_training": 1, "features": "M", "des": "Exp", "itr": 1,
+        "seed": 2021, "train_sample_limit": 0, "channel_independence": 0, "use_relation_layer": 1,
+        "enable_drift_detection": 1, "n_heads": 8, "e_layers": 2, "d_layers": 1, "d_ff": 2048,
+        "factor": 1, "expand": 2, "d_conv": 4, "num_drift_experts": 3, "train_epochs": 60,
+        "patience": 10, "cycle_length": 24, "drift_window_size": 5760, "drift_k_sigma": 3.0,
+        "finetune_epochs": 5, "num_workers": 10, "use_amp": false, "gpu": 0, "checkpoints": "./checkpoints"
+      },
+      "horizons": {
+        "96": {"patch_len": 48, "stride": 12, "learning_rate": 0.0012, "dropout": 0.4, "num_temporal_moe_layers": 2, "num_rnn_layers": 1, "d_model": 128, "batch_size": 256},
+        "192": {"patch_len": 48, "stride": 12, "learning_rate": 0.0008, "dropout": 0.6, "num_temporal_moe_layers": 2, "num_rnn_layers": 2, "d_model": 256, "batch_size": 256},
+        "336": {"patch_len": 48, "stride": 12, "learning_rate": 0.0004, "dropout": 0.3, "num_temporal_moe_layers": 1, "num_rnn_layers": 2, "d_model": 256, "batch_size": 256},
+        "720": {"patch_len": 48, "stride": 12, "learning_rate": 0.0004, "dropout": 0.8, "num_temporal_moe_layers": 1, "num_rnn_layers": 1, "d_model": 256, "batch_size": 256}
+      }
+    },
+    "ETTh2": {
+      "common": {
+        "task_name": "long_term_forecast", "is_training": 1, "features": "M", "des": "Exp", "itr": 1,
+        "seed": 2021, "train_sample_limit": 0, "channel_independence": 0, "use_relation_layer": 1,
+        "enable_drift_detection": 1, "n_heads": 8, "e_layers": 2, "d_layers": 1, "d_ff": 2048,
+        "factor": 1, "expand": 2, "d_conv": 4, "num_drift_experts": 3, "train_epochs": 60,
+        "patience": 10, "cycle_length": 24, "drift_window_size": 5760, "drift_k_sigma": 3.0,
+        "finetune_epochs": 5, "num_workers": 10, "use_amp": false, "gpu": 0, "checkpoints": "./checkpoints"
+      },
+      "horizons": {
+        "96": {"patch_len": 24, "stride": 6, "learning_rate": 0.0008, "dropout": 0.8, "num_temporal_moe_layers": 2, "num_rnn_layers": 1, "d_model": 128, "batch_size": 256},
+        "192": {"patch_len": 24, "stride": 6, "learning_rate": 0.0004, "dropout": 0.6, "num_temporal_moe_layers": 2, "num_rnn_layers": 1, "d_model": 256, "batch_size": 256},
+        "336": {"patch_len": 24, "stride": 6, "learning_rate": 0.0004, "dropout": 0.6, "num_temporal_moe_layers": 2, "num_rnn_layers": 1, "d_model": 256, "batch_size": 256},
+        "720": {"patch_len": 24, "stride": 6, "learning_rate": 0.0004, "dropout": 0.8, "num_temporal_moe_layers": 2, "num_rnn_layers": 1, "d_model": 128, "batch_size": 256}
+      }
+    },
+    "ETTm1": {
+      "common": {
+        "task_name": "long_term_forecast", "is_training": 1, "features": "M", "des": "Exp", "itr": 1,
+        "seed": 2021, "train_sample_limit": 0, "channel_independence": 0, "use_relation_layer": 1,
+        "enable_drift_detection": 1, "n_heads": 8, "e_layers": 2, "d_layers": 1, "d_ff": 2048,
+        "factor": 1, "expand": 2, "d_conv": 4, "num_drift_experts": 3, "train_epochs": 60,
+        "patience": 10, "cycle_length": 96, "drift_window_size": 23040, "drift_k_sigma": 3.0,
+        "finetune_epochs": 5, "num_workers": 10, "use_amp": false, "gpu": 0, "checkpoints": "./checkpoints"
+      },
+      "horizons": {
+        "96": {"patch_len": 48, "stride": 12, "learning_rate": 0.0004, "dropout": 0.4, "num_temporal_moe_layers": 2, "num_rnn_layers": 2, "d_model": 128, "batch_size": 256},
+        "192": {"patch_len": 48, "stride": 12, "learning_rate": 0.0004, "dropout": 0.4, "num_temporal_moe_layers": 2, "num_rnn_layers": 2, "d_model": 128, "batch_size": 256},
+        "336": {"patch_len": 24, "stride": 12, "learning_rate": 0.0016, "dropout": 0.6, "num_temporal_moe_layers": 2, "num_rnn_layers": 2, "d_model": 128, "batch_size": 256},
+        "720": {"patch_len": 48, "stride": 12, "learning_rate": 0.0004, "dropout": 0.4, "num_temporal_moe_layers": 2, "num_rnn_layers": 2, "d_model": 128, "batch_size": 256}
+      }
+    },
+    "ETTm2": {
+      "common": {
+        "task_name": "long_term_forecast", "is_training": 1, "features": "M", "des": "Exp", "itr": 1,
+        "seed": 2021, "train_sample_limit": 0, "channel_independence": 0, "use_relation_layer": 1,
+        "enable_drift_detection": 1, "n_heads": 8, "e_layers": 2, "d_layers": 1, "d_ff": 2048,
+        "factor": 1, "expand": 2, "d_conv": 4, "num_drift_experts": 3, "train_epochs": 60,
+        "patience": 10, "cycle_length": 96, "drift_window_size": 23040, "drift_k_sigma": 3.0,
+        "finetune_epochs": 5, "num_workers": 10, "use_amp": false, "gpu": 0, "checkpoints": "./checkpoints"
+      },
+      "horizons": {
+        "96": {"patch_len": 48, "stride": 6, "learning_rate": 0.0008, "dropout": 0.8, "num_temporal_moe_layers": 2, "num_rnn_layers": 1, "d_model": 256, "batch_size": 256},
+        "192": {"patch_len": 48, "stride": 6, "learning_rate": 0.0008, "dropout": 0.8, "num_temporal_moe_layers": 1, "num_rnn_layers": 2, "d_model": 256, "batch_size": 256},
+        "336": {"patch_len": 48, "stride": 6, "learning_rate": 0.0004, "dropout": 0.8, "num_temporal_moe_layers": 1, "num_rnn_layers": 1, "d_model": 256, "batch_size": 256},
+        "720": {"patch_len": 24, "stride": 12, "learning_rate": 0.0012, "dropout": 0.6, "num_temporal_moe_layers": 1, "num_rnn_layers": 2, "d_model": 128, "batch_size": 256}
+      }
+    },
+    "Traffic": {
+      "common": {
+        "task_name": "long_term_forecast", "is_training": 1, "features": "M", "des": "Exp", "itr": 1,
+        "seed": 2021, "train_sample_limit": 0, "channel_independence": 0, "use_relation_layer": 1,
+        "enable_drift_detection": 1, "n_heads": 8, "e_layers": 2, "d_layers": 1, "d_ff": 2048,
+        "factor": 1, "expand": 2, "d_conv": 4, "num_drift_experts": 3, "train_epochs": 60,
+        "patience": 10, "cycle_length": 24, "drift_window_size": 2400, "drift_k_sigma": 3.0,
+        "finetune_epochs": 5, "num_workers": 10, "use_amp": false, "gpu": 0, "checkpoints": "./checkpoints"
+      },
+      "horizons": {
+        "96": {"patch_len": 48, "stride": 6, "learning_rate": 0.0024, "dropout": 0.1, "num_temporal_moe_layers": 2, "num_rnn_layers": 2, "d_model": 128, "batch_size": 8},
+        "192": {"patch_len": 48, "stride": 6, "learning_rate": 0.0012, "dropout": 0.1, "num_temporal_moe_layers": 2, "num_rnn_layers": 2, "d_model": 128, "batch_size": 8},
+        "336": {"patch_len": 48, "stride": 6, "learning_rate": 0.0018, "dropout": 0.1, "num_temporal_moe_layers": 2, "num_rnn_layers": 1, "d_model": 128, "batch_size": 8},
+        "720": {"patch_len": 48, "stride": 6, "learning_rate": 0.0024, "dropout": 0.1, "num_temporal_moe_layers": 2, "num_rnn_layers": 1, "d_model": 128, "batch_size": 8}
+      }
+    },
+    "Electricity": {
+      "common": {
+        "task_name": "long_term_forecast", "is_training": 1, "features": "M", "des": "Exp", "itr": 1,
+        "seed": 2021, "train_sample_limit": 0, "channel_independence": 0, "use_relation_layer": 1,
+        "enable_drift_detection": 1, "n_heads": 8, "e_layers": 2, "d_layers": 1, "d_ff": 2048,
+        "factor": 1, "expand": 2, "d_conv": 4, "num_drift_experts": 3, "train_epochs": 50,
+        "patience": 10, "cycle_length": 24, "drift_window_size": 2400, "drift_k_sigma": 3.0,
+        "finetune_epochs": 5, "num_workers": 10, "use_amp": false, "gpu": 0, "checkpoints": "./checkpoints"
+      },
+      "horizons": {
+        "96": {"patch_len": 24, "stride": 6, "learning_rate": 0.0008, "dropout": 0.1, "num_temporal_moe_layers": 2, "num_rnn_layers": 2, "d_model": 128, "batch_size": 32},
+        "192": {"patch_len": 24, "stride": 6, "learning_rate": 0.0008, "dropout": 0.3, "num_temporal_moe_layers": 2, "num_rnn_layers": 2, "d_model": 128, "batch_size": 32},
+        "336": {"patch_len": 24, "stride": 6, "learning_rate": 0.0012, "dropout": 0.3, "num_temporal_moe_layers": 2, "num_rnn_layers": 1, "d_model": 256, "batch_size": 32},
+        "720": {"patch_len": 24, "stride": 6, "learning_rate": 0.0008, "dropout": 0.3, "num_temporal_moe_layers": 2, "num_rnn_layers": 2, "d_model": 128, "batch_size": 32}
+      }
+    },
+    "Weather": {
+      "common": {
+        "task_name": "long_term_forecast", "is_training": 1, "features": "M", "des": "Exp", "itr": 1,
+        "seed": 2021, "train_sample_limit": 0, "channel_independence": 1, "use_relation_layer": 1,
+        "enable_drift_detection": 1, "n_heads": 8, "e_layers": 2, "d_layers": 1, "d_ff": 2048,
+        "factor": 1, "expand": 2, "d_conv": 4, "num_drift_experts": 3, "train_epochs": 50,
+        "patience": 10, "cycle_length": 1008, "drift_window_size": 1440, "drift_k_sigma": 3.0,
+        "finetune_epochs": 5, "num_workers": 10, "use_amp": false, "gpu": 0, "checkpoints": "./checkpoints"
+      },
+      "horizons": {
+        "96": {"patch_len": 96, "stride": 24, "learning_rate": 0.0012, "dropout": 0.1, "num_temporal_moe_layers": 1, "num_rnn_layers": 2, "d_model": 128, "batch_size": 256},
+        "192": {"patch_len": 96, "stride": 24, "learning_rate": 0.0004, "dropout": 0.1, "num_temporal_moe_layers": 1, "num_rnn_layers": 1, "d_model": 128, "batch_size": 256},
+        "336": {"patch_len": 96, "stride": 48, "learning_rate": 0.0006, "dropout": 0.1, "num_temporal_moe_layers": 2, "num_rnn_layers": 1, "d_model": 256, "batch_size": 256},
+        "720": {"patch_len": 48, "stride": 48, "learning_rate": 0.0012, "dropout": 0.1, "num_temporal_moe_layers": 1, "num_rnn_layers": 1, "d_model": 128, "batch_size": 256}
+      }
+    },
+    "ILI": {
+      "common": {
+        "task_name": "long_term_forecast", "is_training": 1, "features": "M", "des": "Exp", "itr": 1,
+        "seed": 2021, "train_sample_limit": 0, "channel_independence": 0, "use_relation_layer": 1,
+        "enable_drift_detection": 1, "n_heads": 8, "e_layers": 2, "d_layers": 1, "d_ff": 2048,
+        "factor": 1, "expand": 2, "d_conv": 4, "num_drift_experts": 6, "train_epochs": 50,
+        "patience": 10, "cycle_length": 52, "drift_window_size": 520, "drift_k_sigma": 3.0,
+        "finetune_epochs": 5, "num_workers": 10, "use_amp": false, "gpu": 0, "checkpoints": "./checkpoints"
+      },
+      "horizons": {
+        "24": {"patch_len": 24, "stride": 4, "learning_rate": 0.0008, "dropout": 0.1, "num_temporal_moe_layers": 2, "num_rnn_layers": 1, "d_model": 512, "factor": 3, "e_layers": 4, "batch_size": 64},
+        "36": {"patch_len": 24, "stride": 2, "learning_rate": 0.0004, "dropout": 0.1, "num_temporal_moe_layers": 2, "num_rnn_layers": 1, "d_model": 1024, "factor": 3, "e_layers": 4, "batch_size": 64},
+        "48": {"patch_len": 24, "stride": 4, "learning_rate": 0.0008, "dropout": 0.3, "num_temporal_moe_layers": 2, "num_rnn_layers": 1, "d_model": 512, "factor": 3, "e_layers": 4, "batch_size": 64},
+        "60": {"patch_len": 24, "stride": 2, "learning_rate": 0.0004, "dropout": 0.3, "num_temporal_moe_layers": 1, "num_rnn_layers": 1, "d_model": 512, "factor": 3, "e_layers": 4, "batch_size": 64}
+      }
+    },
+    "Exchange": {
+      "common": {
+        "task_name": "long_term_forecast", "is_training": 1, "features": "M", "des": "Exp", "itr": 1,
+        "seed": 2021, "train_sample_limit": 0, "channel_independence": 0, "use_relation_layer": 1,
+        "enable_drift_detection": 1, "n_heads": 8, "e_layers": 2, "d_layers": 1, "d_ff": 2048,
+        "factor": 1, "expand": 2, "d_conv": 4, "num_drift_experts": 3, "train_epochs": 5,
+        "patience": 10, "cycle_length": 7, "drift_window_size": 2400, "drift_k_sigma": 3.0,
+        "finetune_epochs": 5, "num_workers": 10, "use_amp": false, "gpu": 0, "checkpoints": "./checkpoints"
+      },
+      "horizons": {
+        "96": {"patch_len": 16, "stride": 8, "learning_rate": 0.0004, "dropout": 0.3, "num_temporal_moe_layers": 2, "num_rnn_layers": 1, "d_model": 128, "batch_size": 128},
+        "192": {"patch_len": 32, "stride": 8, "learning_rate": 0.0001, "dropout": 0.3, "num_temporal_moe_layers": 1, "num_rnn_layers": 2, "d_model": 512, "batch_size": 128},
+        "336": {"patch_len": 16, "stride": 8, "learning_rate": 0.0004, "dropout": 0.3, "num_temporal_moe_layers": 2, "num_rnn_layers": 2, "d_model": 256, "batch_size": 128},
+        "720": {"patch_len": 16, "stride": 8, "learning_rate": 0.0008, "dropout": 0.5, "num_temporal_moe_layers": 2, "num_rnn_layers": 2, "d_model": 256, "batch_size": 128}
+      }
+    }
+  }
+}
