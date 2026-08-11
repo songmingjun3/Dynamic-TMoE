@@ -292,7 +292,9 @@ class Exp_Main(Exp_Basic):
             exit()
         preds = np.concatenate(preds, axis=0)
         trues = np.concatenate(trues, axis=0)
-        # inputx = np.array(inputx)
+        # The final test batch may be shorter than the others. Concatenating
+        # along the sample axis avoids NumPy's ragged-array failure.
+        inputx = np.concatenate(inputx, axis=0)
         # reconx = np.array(reconx)
         # reconxy = np.array(reconxy)
         # inputxy = np.array(inputxy)
@@ -301,7 +303,6 @@ class Exp_Main(Exp_Basic):
 
         # preds = preds.reshape(-1, preds.shape[-2], preds.shape[-1])
         # trues = trues.reshape(-1, trues.shape[-2], trues.shape[-1])
-        # inputx = inputx.reshape(-1, inputx.shape[-2], inputx.shape[-1])
         # reconx = reconx.reshape(-1, reconx.shape[-2], reconx.shape[-1])
         # reconxy = reconxy.reshape(-1, reconxy.shape[-2], reconxy.shape[-1])
         # inputxy = inputxy.reshape(-1, inputxy.shape[-2], inputxy.shape[-1])
