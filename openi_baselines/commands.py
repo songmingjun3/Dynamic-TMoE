@@ -105,91 +105,6 @@ def _dlinear(task: TaskSpec, pred_len: int, layout: CommandLayout) -> ProcessSpe
     return _base_process(task, layout, stage="train", argv=argv)
 
 
-DYNAMICTMOE_P0 = {
-    "task_name": "long_term_forecast",
-    "is_training": 1,
-    "features": "M",
-    "des": "P0",
-    "itr": 1,
-    "seed": 2021,
-    "train_sample_limit": 0,
-    "channel_independence": 0,
-    "use_relation_layer": 1,
-    "enable_drift_detection": 1,
-    "d_model": 128,
-    "num_temporal_moe_layers": 2,
-    "num_rnn_layers": 1,
-    "num_drift_experts": 3,
-    "train_epochs": 50,
-    "learning_rate": 0.0008,
-    "patience": 10,
-    "dropout": 0.1,
-    "cycle_length": 24,
-    "drift_k_sigma": 3.0,
-    "finetune_epochs": 3,
-    "num_workers": 0,
-    "gpu": 0,
-    "checkpoints": "./checkpoints",
-}
-
-
-def _dynamic_tmoe(task: TaskSpec, pred_len: int, layout: CommandLayout) -> ProcessSpec:
-    profile, argv = _common(task, pred_len, layout)
-    if task.strict_config is not None:
-        strict_options = dict(DYNAMICTMOE_P0)
-        strict_options.update(task.parameters)
-        strict_options.update(task.horizon_overrides.get(pred_len, {}))
-        use_amp = strict_options.pop("use_amp", None)
-        strict_options.pop("matrix_id", None)
-        strict_options.pop("schema", None)
-        strict_options["des"] = strict_options.get("des", "Exp")
-        strict_options["model_id"] = (
-            f"{profile['id']}_{profile['seq']}_{pred_len}_s2021_"
-            f"{task.strict_config}"
-        )
-        base_options = {
-            "root_path": layout.data.root_path,
-            "data_path": layout.data.file.name,
-            "model": task.native_model,
-            "data": profile["data"],
-            "seq_len": profile["seq"],
-            "label_len": profile["label"],
-            "pred_len": pred_len,
-            "enc_in": profile["channels"],
-            "dec_in": profile["channels"],
-            "c_out": profile["channels"],
-        }
-        _extend(argv, **base_options, **strict_options)
-        if use_amp is True:
-            argv.append("--use_amp")
-        elif use_amp not in (None, False):
-            raise ValueError("Strict use_amp must be a boolean")
-    else:
-        is_ett = task.dataset.startswith("ETT")
-        _extend(
-            argv,
-            root_path=layout.data.root_path,
-            data_path=layout.data.file.name,
-            model_id=f"{profile['id']}_{profile['seq']}_{pred_len}_s2021",
-            model=task.native_model,
-            data=profile["data"],
-            seq_len=profile["seq"],
-            label_len=profile["label"],
-            pred_len=pred_len,
-            enc_in=profile["channels"],
-            dec_in=profile["channels"],
-            c_out=profile["channels"],
-            patch_len=48 if is_ett else 24,
-            stride=12 if is_ett else 6,
-            batch_size=2 if task.dataset == "Electricity" else 32,
-            drift_window_size=(
-                2400 if task.dataset in {"Electricity", "Traffic"} else 5760
-            ),
-            **DYNAMICTMOE_P0,
-        )
-    return _base_process(task, layout, stage="train", argv=argv)
-
-
 def _fedformer(task: TaskSpec, pred_len: int, layout: CommandLayout) -> ProcessSpec:
     profile, argv = _common(task, pred_len, layout)
     _extend(
@@ -206,15 +121,12 @@ def _fedformer(task: TaskSpec, pred_len: int, layout: CommandLayout) -> ProcessS
         pred_len=pred_len,
         e_layers=2,
         d_layers=1,
-        factor=3,
         enc_in=profile["channels"],
         dec_in=profile["channels"],
         c_out=profile["channels"],
         d_model=512,
         des="Exp",
         itr=1,
-        learning_rate=0.000002 if task.dataset == "ETTm1" else None,
-        train_epochs=3 if task.dataset == "Traffic" else None,
         gpu=0,
         checkpoints="./checkpoints",
     )
@@ -442,12 +354,12 @@ def _timemixer(task: TaskSpec, pred_len: int, layout: CommandLayout) -> ProcessS
         is_training=1,
         root_path=layout.data.root_path,
         data_path=layout.data.file.name,
-        model_id=f"{profile['id']}_{profile['seq']}_{pred_len}",
+        model_id=f"{profile['id']}_96_{pred_len}",
         model=task.native_model,
         data=profile["data"],
         features="M",
-        seq_len=profile["seq"],
-        label_len=profile["label"],
+        seq_len=96,
+        label_len=0,
         pred_len=pred_len,
         e_layers=2,
         enc_in=profile["channels"],
@@ -518,7 +430,6 @@ def _timesnet(task: TaskSpec, pred_len: int, layout: CommandLayout) -> ProcessSp
 
 BUILDERS = {
     "DLinear": _dlinear,
-    "Dynamic_TMoE": _dynamic_tmoe,
     "FEDformer": _fedformer,
     "FITS": _fits,
     "PatchTST": _patchtst,

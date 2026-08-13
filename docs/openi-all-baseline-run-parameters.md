@@ -13,15 +13,15 @@
 | GPU | 单卡 Tesla V100 32GB |
 | 执行方式 | 单 GPU 串行笛卡尔积 |
 
-本方案覆盖 Dynamic TMoE 与 9 个 baseline、90 个模型/数据集组合和 360 次 horizon 训练。TimeMixer 的 Exchange 与 ILI 均已纳入矩阵。
+本方案覆盖 9 个 baseline、80 个受支持的模型/数据集组合和 320 次 horizon 训练。`TimeMixer × Exchange` 已通过通用 8 通道数据配置纳入实验矩阵；暂不支持的 `TimeMixer × ILI` 不包含在内。
 
 ## 覆盖总览
 
 | 任务 | 模型数 | 数据集数 | 组合数 | Horizon 训练数 |
 | --- | ---: | ---: | ---: | ---: |
-| A：共同数据集 | 10 | 7 | 70 | 280 |
-| B：Exchange 与 ILI | 10 | 2 | 20 | 80 |
-| 合计 | 10 | 9 | 90 | 360 |
+| A：共同数据集 | 9 | 7 | 63 | 252 |
+| B：Exchange 与 ILI | 9/8 | 2 | 17 | 68 |
+| 合计 | 9 | 9 | 80 | 320 |
 
 两个启智任务彼此独立。每个任务内部按模型优先顺序执行笛卡尔积，同一时间只运行一个模型/数据集/horizon。
 
@@ -36,7 +36,7 @@ all-baselines-common-datasets
 模型：
 
 ```text
-Dynamic_TMoE,DLinear,FEDformer,FITS,PatchTST,RAFT,ST-MTM,TFPS,TimeMixer,TimesNet
+DLinear,FEDformer,FITS,PatchTST,RAFT,ST-MTM,TFPS,TimeMixer,TimesNet
 ```
 
 数据集：
@@ -48,12 +48,12 @@ ETTh1,ETTh2,ETTm1,ETTm2,Electricity,Traffic,Weather
 启智页面选择启动文件 `train_openi.py`，参数栏完整复制以下单行内容：
 
 ```text
---model Dynamic_TMoE,DLinear,FEDformer,FITS,PatchTST,RAFT,ST-MTM,TFPS,TimeMixer,TimesNet --dataset ETTh1,ETTh2,ETTm1,ETTm2,Electricity,Traffic,Weather --pred-len all --batch-size 96:32,192:16,336:8,720:8
+--model DLinear,FEDformer,FITS,PatchTST,RAFT,ST-MTM,TFPS,TimeMixer,TimesNet --dataset ETTh1,ETTh2,ETTm1,ETTm2,Electricity,Traffic,Weather --pred-len all --batch-size 96:32,192:16,336:8,720:8
 ```
 
-该任务生成 `10 × 7 = 70` 个模型/数据集组合。每个组合依次运行 `96,192,336,720`，共 `70 × 4 = 280` 次 horizon 训练。
+该任务生成 `9 × 7 = 63` 个模型/数据集组合。每个组合依次运行 `96,192,336,720`，共 `63 × 4 = 252` 次 horizon 训练。
 
-## 任务 B：全部模型 × Exchange 与 ILI
+## 任务 B：全部模型 × Exchange，加八个模型 × ILI
 
 建议任务名称：
 
@@ -64,7 +64,7 @@ all-baselines-exchange-ili
 模型：
 
 ```text
-Dynamic_TMoE,DLinear,FEDformer,FITS,PatchTST,RAFT,ST-MTM,TFPS,TimeMixer,TimesNet
+DLinear,FEDformer,FITS,PatchTST,RAFT,ST-MTM,TFPS,TimesNet
 ```
 
 数据集：
@@ -76,10 +76,16 @@ Exchange,ILI
 启智页面选择启动文件 `train_openi.py`，参数栏完整复制以下单行内容：
 
 ```text
---model Dynamic_TMoE,DLinear,FEDformer,FITS,PatchTST,RAFT,ST-MTM,TFPS,TimeMixer,TimesNet --dataset Exchange,ILI --pred-len all --batch-size 24:16,36:16,48:8,60:8,96:32,192:16,336:8,720:8
+--model DLinear,FEDformer,FITS,PatchTST,RAFT,ST-MTM,TFPS,TimesNet --dataset Exchange,ILI --pred-len all --batch-size 24:16,36:16,48:8,60:8,96:32,192:16,336:8,720:8
 ```
 
-该任务生成 `10 × 2 = 20` 个模型/数据集组合。Exchange 运行 `96,192,336,720`，ILI 运行 `24,36,48,60`，共 `20 × 4 = 80` 次 horizon 训练。
+该提交生成 `8 × 2 = 16` 个模型/数据集组合。再单独提交 TimeMixer 的 Exchange 任务（不能把 ILI 放入同一笛卡尔积）：
+
+```text
+--model TimeMixer --dataset Exchange --pred-len all --batch-size 96:256,192:128,336:64,720:32 --num-workers 4 --use-amp true --patience 5 --pin-memory true --persistent-workers true --prefetch-factor 2 --cudnn-benchmark false --cpu-threads 1
+```
+
+任务 B 的两个提交共生成 `8 × 2 + 1 = 17` 个模型/数据集组合。Exchange 有 9 个模型运行 `96,192,336,720`，ILI 有 8 个模型运行 `24,36,48,60`，共 `17 × 4 = 68` 次 horizon 训练。
 
 ## Batch Size 说明
 
@@ -120,19 +126,28 @@ Exchange,ILI
 
 ## 平台时限不足时的拆分方法
 
-任务 A 包含 280 次训练，任务 B 包含 80 次训练，实际运行时间可能超过平台单任务时限。遇到超时或需要缩短单次占卡时间时，只拆分 `--model` 数组，其他参数保持不变。
+任务 A 包含 252 次训练，任务 B 包含 68 次训练，实际运行时间可能超过平台单任务时限。遇到超时或需要缩短单次占卡时间时，只拆分 `--model` 数组，其他参数保持不变。
 
 建议模型分组：
 
 ```text
-Dynamic_TMoE,DLinear,FEDformer
+DLinear,FEDformer,FITS
 PatchTST,RAFT,ST-MTM
-FITS,TFPS,TimeMixer,TimesNet
+TFPS,TimeMixer,TimesNet
 ```
 
 拆分任务 A 时，将原命令中的 `--model` 分别替换为以上三组。
 
-任务 B 使用相同模型分组；不同启智任务的产物位于各自输出目录，需要在下载后合并汇总。
+拆分任务 B 时使用：
+
+```text
+DLinear,FEDformer,FITS
+PatchTST,RAFT,ST-MTM
+TFPS,TimesNet
+TimeMixer（仅 Exchange，单独提交）
+```
+
+任务 B 必须把 TimeMixer 的 Exchange 实验单独提交，因为模型和数据集参数按笛卡尔积展开，而 TimeMixer 仍不支持 ILI。拆分不会改变总覆盖范围，但不同启智任务的产物位于各自输出目录，需要在下载后合并汇总。
 
 ## 输出产物
 
@@ -159,16 +174,16 @@ multi_task_summary.csv
 
 ## 实验完成检查清单
 
-- [ ] 任务 A 的 `multi_task_summary` 包含 280 行 horizon 状态。
-- [ ] 任务 B 的 `multi_task_summary` 包含 80 行 horizon 状态。
-- [ ] 两组任务合计收集到 360 行状态。
+- [ ] 任务 A 的 `multi_task_summary` 包含 252 行 horizon 状态。
+- [ ] 任务 B 的两个提交合计包含 68 行 horizon 状态。
+- [ ] 两组任务合计收集到 320 行状态。
 - [ ] 每个成功行对应的目录存在 `status.json` 和 `metrics.json`。
 - [ ] `metrics.json` 至少包含 MSE 和 MAE。
 - [ ] 需要保存模型的实验已产生 checkpoint。
 - [ ] 预测文件、训练日志和原生结果已经下载。
 - [ ] 汇总中没有未处理的 `failed` 状态。
 
-若存在失败行，先查看对应 `<model>/<dataset>/<pred_len>/logs/error.log` 或 `matrix_error.log`，调整 batch size 或依赖后，仅重新提交失败范围，避免无条件使用 `--force` 重跑全部 360 次实验。
+若存在失败行，先查看对应 `<model>/<dataset>/<pred_len>/logs/error.log` 或 `matrix_error.log`，调整 batch size 或依赖后，仅重新提交失败范围，避免无条件使用 `--force` 重跑全部 320 次实验。
 
 ## 提交前冒烟验证
 

@@ -23,7 +23,6 @@ DATASETS = (
 
 MODEL_DEFINITIONS = {
     "DLinear": ("baselines/Dlinear/run_longExp.py", "DLinear", DATASETS),
-    "Dynamic_TMoE": ("run.py", "Dynamic_TMoE", DATASETS),
     "FEDformer": ("baselines/FEDformer/run.py", "FEDformer", DATASETS),
     "FITS": ("baselines/FITS/run_longExp_F.py", "FITS", DATASETS),
     "PatchTST": ("baselines/PatchTST/run_longExp.py", "PatchTST", DATASETS),
@@ -44,7 +43,6 @@ MODEL_DEFINITIONS = {
             "ETTm2",
             "Electricity",
             "Exchange",
-            "ILI",
             "Traffic",
             "Weather",
         ),

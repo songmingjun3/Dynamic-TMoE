@@ -166,6 +166,11 @@ scripts/augmentation/
 run_anylearn.py
 environment.txt
 
+# OpenI automation state and private result artifacts
+.openi-automation/
+openi-results/
+output/openi_p0/
+
 
 # Result files
 *.txt
@@ -176,3 +181,9 @@ environment.txt
 output/*
 !output/
 !output/reproduction_summary.csv
+
+# Local experiment outputs and temporary workspaces
+.codex-worktrees/
+%SystemDrive%/
+baselines/*/test_results/
+baselines/*/logs/

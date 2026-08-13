@@ -16,7 +16,6 @@ from openi_baselines.registry import (
     UnsupportedTaskError,
     parse_task_matrix,
 )
-from openi_baselines.strict_config import apply_strict_config
 from openi_baselines.types import AccelerationOptions
 
 
@@ -84,11 +83,6 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--code-root", type=Path)
     parser.add_argument("--dataset-root", type=Path)
     parser.add_argument("--output-root", type=Path)
-    parser.add_argument(
-        "--config",
-        type=Path,
-        help="Versioned strict matrix configuration to apply to Dynamic_TMoE",
-    )
     return parser
 
 
@@ -97,8 +91,6 @@ def main(argv: list[str] | None = None) -> int:
     context: PlatformContext | None = None
     try:
         tasks = parse_task_matrix(args.model, args.dataset)
-        if args.config is not None:
-            tasks = apply_strict_config(tasks, args.config)
         plans = plan_matrix(
             tasks,
             pred_len_value=args.pred_len,
